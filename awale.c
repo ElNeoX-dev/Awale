@@ -208,6 +208,14 @@ void jouer(int *plateau, char **joueur, int *authorizedMove, int *points, int j)
         graines--;
     }
 
+    // sauvegarde du plateau et des points
+    int pointsSave = points[j];
+    int plateauSave[12];
+    for (int i = 0; i < 12; i++)
+    {
+        plateauSave[i] = plateau[i];
+    }
+
     // tant que la case d'arrivée est adverse et 1 < nbGraine < 4, on prend les graines
     while (isTerrainAdverse(j, caseChoisie) && plateau[caseChoisie] > 1 && plateau[caseChoisie] < 4)
     {
@@ -223,6 +231,17 @@ void jouer(int *plateau, char **joueur, int *authorizedMove, int *points, int j)
         {
             caseChoisie++;
         }
+    }
+
+    // si la prise de graine précedente entraine une stravation, on restore le plateau et les points comme il était avant
+    if (hasStarvation(plateau))
+    {
+        printf("\033[1m%s a affamé son adversaire !\033[0m\r\n", joueur[j]);
+        for (int i = 0; i < 12; i++)
+        {
+            plateau[i] = plateauSave[i];
+        }
+        points[j] = pointsSave;
     }
 }
 
