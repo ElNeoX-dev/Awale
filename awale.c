@@ -10,6 +10,7 @@ int main(int argc, char **argv)
 {
 
     int *plateau = malloc(12 * sizeof(int));
+    int *authorizedMove = malloc(12 * sizeof(int));
     int i;
 
     char *joueur[2] = {"Tim", "Hugo"};
@@ -18,6 +19,7 @@ int main(int argc, char **argv)
     for (i = 0; i < 12; i++)
     {
         plateau[i] = 4;
+        authorizedMove[i] = 0;
     }
 
     // affichage du plateau
@@ -38,6 +40,7 @@ int main(int argc, char **argv)
 
 void jouer(int *plateau, char **joueur, int j)
 {
+    
     int caseChoisie = -1;
     printf("************************************ \r\n");
 
@@ -110,8 +113,61 @@ void afficherPlateau(int *plateau, char **joueur)
     printf("|\r\n\r\n");
 }
 
-int hasWin()
+int hasStarvation(int *plateau)
 {
-    // true (!= 0) si un des joueurs a gagné
-    return 0;
+    int i, j, offset, sumJ1 = 0, sumJ2 = 0;
+
+    // Calcul la somme des graines de chaque joueur
+    for (i = 0; i < 6; i++)
+    {
+        sumJ1 += plateau[i];
+    }
+    for (i = 6; i < 12; i++)
+    {
+        sumJ2 += plateau[i];
+    }
+
+    // Vérifie si un joueur n'a plus de graines
+    if (sumJ1 == 0)
+    {
+        offset = 6;
+    }
+    else if (sumJ2 == 0)
+    {
+        offset = 0;
+    }
+    else
+    {
+        return 0;
+    }
+    //Verfie s'il y a une famine
+    for (i = 0; i < 6; i++)
+    {
+        if (plateau[i + offset] > 6 - i && plateau[i + offset] >= 4)
+        {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+int hasWin(int *points, char **joueur)
+{
+    int i, j;
+    if(points[0] < points[1])
+    {
+        printf("%s a gagné !\r\n", joueur[1]);
+        return 0;
+    }
+    else if(points[0] > points[1])
+    {
+        printf("%s a gagné !\r\n", joueur[0]);
+        return 1;
+    }
+    else
+    {
+        printf("Egalité !\r\n");
+    }
+
+    return 2;
 }
