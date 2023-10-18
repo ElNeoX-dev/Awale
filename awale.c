@@ -3,15 +3,17 @@
 #include <stdio.h>
 
 void afficherPlateau(int *plateau, char **joueur);
-void jouer(int *plateau, char **joueur, int *points, int j);
-int aFiniTerrainAdverse(int j, int *joueur, int CaseChoisie);
-int hasWin();
+void jouer(int *plateau, char **joueur, int *authorizedMove, int *points, int j);
+int aFiniTerrainAdverse(int j, int *plateau, int CaseChoisie);
+int updateAuthorizedMove(int *authorizedMove, int *plateau, int j);
+int hasWin(int *points, char **joueur);
+int isFinish(int *plateau, int *points);
 
 int main(int argc, char **argv)
 {
 
     int *plateau = malloc(12 * sizeof(int));
-    int *authorizedMove = malloc(12 * sizeof(int));
+    int *authorizedMove = malloc(6 * sizeof(int));
     int *points = malloc(2 * sizeof(int));
     int i;
 
@@ -28,7 +30,7 @@ int main(int argc, char **argv)
     afficherPlateau(plateau, joueur);
 
     // boucle de jeu
-    while (hasWin() == 0)
+    while (isFinish() == 0)
     {
         // joueur 1
         jouer(plateau, joueur, points, 0);
@@ -40,14 +42,39 @@ int main(int argc, char **argv)
     }
 }
 
-void jouer(int *plateau, char **joueur, int *points, int j)
+int updateAuthorizedMove(int *authorizedMove, int *plateau, int j)
 {
+    if(checkStarvation(plateau, authorizedMove, j) == 1)
+    {
+        return 1;
+    }
+    for (int i = 0; i < 6; i++)
+    {
+        authorizedMove[i] = (plateau[i + j * 6] != 0);
+    }
+    return 0;
+}
 
+void jouer(int *plateau, char **joueur, int *authorizedMove, int *points, int j)
+{
+    int i;
     int caseChoisie = -1;
-
+    int notAuthorizedMove = 1;
     printf("************************************ \r\n");
-
-    while (caseChoisie < 0 || caseChoisie > 11)
+    if(updateAuthorizedMove(authorizedMove, plateau, j))
+    {
+        printf("\e[0;35mStarvation !\033[0m\r\n");
+        printf("Cases possibles : ");
+        for(i = 0; i < 6; i++)
+        {
+            if(authorizedMove[i] == 1)
+            {
+                printf("%d ", i + j * 6);
+            }
+        }
+        printf("\r\n");
+    }
+    while (notAuthorizedMove == 1)
     {
         if (j == 0)
         {
@@ -62,14 +89,9 @@ void jouer(int *plateau, char **joueur, int *points, int j)
             printf("\r\n");
         }
 
-        /* VONT ÊTRE REMPLACÉ PAR AUTORIZEMOUV*/
-        if (j == 0 && (caseChoisie < 0 || caseChoisie > 5))
+        if (authorizedMove[caseChoisie] == 0)
         {
-            printf("**/!\\ Case invalide !**\r\n");
-        }
-        else if (j == 1 && (caseChoisie < 6 || caseChoisie > 11))
-        {
-            printf("**/!\\ Case invalide !**\r\n");
+            printf("**/!\\ Case vide !**\r\n");
         }
 
         if (plateau[caseChoisie] == 0)
@@ -178,42 +200,56 @@ void afficherPlateau(int *plateau, char **joueur)
     printf("Case: –06– –07– –08– –09– –10– –11– \r\n\r\n");
 }
 
-int hasStarvation(int *plateau)
+int checkStarvation(int *plateau, int *authorizedMove, int j)
 {
-    int i, offset, sumJ1 = 0, sumJ2 = 0;
+    int i, offset, sum = 0;
+    int starvation = 0;
 
-    // Calcul la somme des graines de chaque joueur
-    for (i = 0; i < 6; i++)
+    if (j == 0)
     {
-        sumJ1 += plateau[i];
-    }
-    for (i = 6; i < 12; i++)
-    {
-        sumJ2 += plateau[i];
-    }
-
-    // Vérifie si un joueur n'a plus de graines
-    if (sumJ1 == 0)
-    {
-        offset = 6;
-    }
-    else if (sumJ2 == 0)
-    {
-        offset = 0;
-    }
-    else
-    {
-        return 0;
-    }
-    // Verfie s'il y a une famine
-    for (i = 0; i < 6; i++)
-    {
-        if (plateau[i + offset] > 6 - i && plateau[i + offset] >= 4)
+        for (i = 6; i < 12; i++)
         {
-            return 0;
+            sum += plateau[i];
+        }
+        if (sum == 0)
+        {
+            for (i = 0; i < 6; i++)
+            {
+                if (plateau[i] > 1 + i && plateau[i] >= 4)
+                {
+                    authorizedMove[i] = 1;
+                    starvation = 1;
+                }
+                else 
+                {
+                    authorizedMove[i] = 0;
+                }
+            }
         }
     }
-    return 1;
+    else if (j == 1)
+    {
+        for (i = 0; i < 6; i++)
+        {
+            sum += plateau[i];
+        }
+        if (sum == 0)
+        {
+            for (i = 0; i < 6; i++)
+            {
+                if (plateau[i + 6] > 6 - i && plateau[i + 6] >= 4)
+                {
+                    authorizedMove[i] = 1;
+                    starvation = 1;
+                }
+                else 
+                {
+                    authorizedMove[i] = 0;
+                }
+            }
+        }
+    }
+    return starvation;
 }
 
 int hasWin(int *points, char **joueur)
