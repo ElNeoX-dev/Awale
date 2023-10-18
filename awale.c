@@ -11,11 +11,8 @@ int main(int argc, char **argv)
 {
 
     int *plateau = malloc(12 * sizeof(int));
-<<<<<<< HEAD
     int *authorizedMove = malloc(12 * sizeof(int));
-=======
     int *points = malloc(2 * sizeof(int));
->>>>>>> main
     int i;
 
     char *joueur[2] = {"Tim", "Hugo"};
@@ -23,12 +20,8 @@ int main(int argc, char **argv)
     // initialisation du plateau
     for (i = 0; i < 12; i++)
     {
-<<<<<<< HEAD
         plateau[i] = 4;
         authorizedMove[i] = 0;
-=======
-        plateau[i] = 1;
->>>>>>> main
     }
 
     // affichage du plateau
@@ -212,7 +205,7 @@ int hasStarvation(int *plateau)
     {
         return 0;
     }
-    //Verfie s'il y a une famine
+    // Verfie s'il y a une famine
     for (i = 0; i < 6; i++)
     {
         if (plateau[i + offset] > 6 - i && plateau[i + offset] >= 4)
@@ -225,12 +218,12 @@ int hasStarvation(int *plateau)
 
 int hasWin(int *points, char **joueur)
 {
-    if(points[0] < points[1])
+    if (points[0] < points[1])
     {
         printf("%s a gagné !\r\n", joueur[1]);
         return 0;
     }
-    else if(points[0] > points[1])
+    else if (points[0] > points[1])
     {
         printf("%s a gagné !\r\n", joueur[0]);
         return 1;
