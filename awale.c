@@ -3,12 +3,12 @@
 #include <stdio.h>
 
 void afficherPlateau(int *plateau, char **joueur, int *points);
-void jouer(int *plateau, char **joueur, int* authorizedMove, int *points, int j);
+void jouer(int *plateau, char **joueur, int *authorizedMove, int *points, int j);
 int isTerrainAdverse(int j, int CaseChoisie);
 int updateAuthorizedMove(int *authorizedMove, int *plateau, int j);
 int checkStarvation(int *plateau, int *authorizedMove, int j);
 int hasWin(int *points, char **joueur);
-int isFinish(int *plateau, int *points);
+int isFinish(int *plateau, int *points, int *authorizedMove);
 
 // Regle à dev : Si un coup devait prendre toutes les graines adverses, alors le coup peut être joué, mais aucune capture n'est faite : il ne faut pas « affamer » l'adversaire.
 
@@ -25,7 +25,7 @@ int main(int argc, char **argv)
     // initialisation du plateau
     for (i = 0; i < 12; i++)
     {
-        plateau[i] = 2;
+        plateau[i] = 4;
         authorizedMove[i] = 0;
     }
 
@@ -33,7 +33,7 @@ int main(int argc, char **argv)
     afficherPlateau(plateau, joueur, points);
 
     // boucle de jeu
-    while (isFinish(plateau, points) == 0)
+    while (isFinish(plateau, points, authorizedMove) == 0)
     {
         // joueur 1
         jouer(plateau, joueur, authorizedMove, points, 0);
@@ -45,7 +45,7 @@ int main(int argc, char **argv)
     }
 }
 
-int isFinish(int *plateau, int *points)
+int isFinish(int *plateau, int *points, int *authorizedMove)
 {
     int i, sumJ1 = 0, sumJ2 = 0;
 
@@ -60,10 +60,7 @@ int isFinish(int *plateau, int *points)
     }
 
     // Check if either player has won
-    if ((sumJ1 == 0 || sumJ2 == 0) && (checkStarvation(plateau, NULL, 0) == 0) && (checkStarvation(plateau, NULL, 1) == 0))
-    {
-        return 1;
-    }
+    if ((sumJ1 == 0 || sumJ2 == 0) && (checkStarvation(plateau, authorizedMove, 0) == 0) && (checkStarvation(plateau, authorizedMove, 1) == 0))
     {
         // The game is over, so distribute remaining seeds to the winner's side
         for (i = 0; i < 6; i++)
@@ -99,7 +96,7 @@ int isFinish(int *plateau, int *points)
 
 int updateAuthorizedMove(int *authorizedMove, int *plateau, int j)
 {
-    if(checkStarvation(plateau, authorizedMove, j) == 1)
+    if (checkStarvation(plateau, authorizedMove, j) == 1)
     {
         return 1;
     }
@@ -114,22 +111,22 @@ void jouer(int *plateau, char **joueur, int *authorizedMove, int *points, int j)
 {
     int i;
     int caseChoisie = -1;
-    int notAuthorizedMove = 1;
+    int validMove = 0;
     printf("************************************ \r\n");
-    if(updateAuthorizedMove(authorizedMove, plateau, j))
+    if (updateAuthorizedMove(authorizedMove, plateau, j) == 1)
     {
         printf("\e[0;35mStarvation !\033[0m\r\n");
         printf("Cases possibles : ");
-        for(i = 0; i < 6; i++)
+        for (i = 0; i < 6; i++)
         {
-            if(authorizedMove[i] == 1)
+            if (authorizedMove[i] == 1)
             {
                 printf("%d ", i + j * 6);
             }
         }
         printf("\r\n");
     }
-    while (notAuthorizedMove == 1)
+    while (validMove != 1)
     {
         if (j == 0)
         {
@@ -144,14 +141,22 @@ void jouer(int *plateau, char **joueur, int *authorizedMove, int *points, int j)
             printf("\r\n");
         }
 
-        if (authorizedMove[caseChoisie] == 0)
+        if (caseChoisie < j * 6 + 6 && caseChoisie >= j * 6)
         {
-            printf("**/!\\ Case vide !**\r\n");
+            if (authorizedMove[caseChoisie - j * 6] == 0)
+            {
+                printf("**/!\\ Choix non valide !**\r\n");
+                validMove = 0;
+            }
+            else
+            {
+                validMove = 1;
+            }
         }
-
-        if (plateau[caseChoisie] == 0)
+        else
         {
-            printf("Case vide !\r\n");
+            printf("**/!\\ Choix non valide !**\r\n");
+            validMove = 0;
         }
     }
 
@@ -229,7 +234,7 @@ void afficherPlateau(int *plateau, char **joueur, int *points)
     printf("\r\n");
 
     int i = 0;
-    printf("Case: –00– –01– –02– –03– –04– –05– \r\n");
+    printf("Case:  –00– –01– –02– –03– –04– –05– \r\n");
     printf("––––– –––––––––––––––––––––––––––––––   –––––––––– \r\n");
     printf("\e[1;33m\033[1mJ1 :  ");
     for (i = 0; i < 6; i++)
@@ -261,7 +266,7 @@ void afficherPlateau(int *plateau, char **joueur, int *points)
 
     printf("|     %d pts\033[0m\r\n", points[1]);
     printf("––––– –––––––––––––––––––––––––––––––   –––––––––– \r\n");
-    printf("Case: –06– –07– –08– –09– –10– –11– \r\n\r\n");
+    printf("Case:  –06– –07– –08– –09– –10– –11– \r\n\r\n");
 }
 
 int checkStarvation(int *plateau, int *authorizedMove, int j)
@@ -284,7 +289,7 @@ int checkStarvation(int *plateau, int *authorizedMove, int j)
                     authorizedMove[i] = 1;
                     starvation = 1;
                 }
-                else 
+                else
                 {
                     authorizedMove[i] = 0;
                 }
@@ -306,7 +311,7 @@ int checkStarvation(int *plateau, int *authorizedMove, int j)
                     authorizedMove[i] = 1;
                     starvation = 1;
                 }
-                else 
+                else
                 {
                     authorizedMove[i] = 0;
                 }
