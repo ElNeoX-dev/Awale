@@ -40,7 +40,7 @@ int main(int argc, char **argv)
 
 void jouer(int *plateau, char **joueur, int j)
 {
-    
+
     int caseChoisie = -1;
     printf("************************************ \r\n");
 
@@ -115,7 +115,7 @@ void afficherPlateau(int *plateau, char **joueur)
 
 int hasStarvation(int *plateau)
 {
-    int i, j, offset, sumJ1 = 0, sumJ2 = 0;
+    int i, offset, sumJ1 = 0, sumJ2 = 0;
 
     // Calcul la somme des graines de chaque joueur
     for (i = 0; i < 6; i++)
@@ -153,7 +153,6 @@ int hasStarvation(int *plateau)
 
 int hasWin(int *points, char **joueur)
 {
-    int i, j;
     if(points[0] < points[1])
     {
         printf("%s a gagné !\r\n", joueur[1]);
