@@ -42,6 +42,11 @@ int main(int argc, char **argv)
     }
 }
 
+int isFinish(int *plateau, int *points)
+{
+    
+}
+
 int updateAuthorizedMove(int *authorizedMove, int *plateau, int j)
 {
     if(checkStarvation(plateau, authorizedMove, j) == 1)
