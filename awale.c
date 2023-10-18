@@ -2,10 +2,12 @@
 #include <string.h>
 #include <stdio.h>
 
-void afficherPlateau(int *plateau, char **joueur);
+void afficherPlateau(int *plateau, char **joueur, int *points);
 void jouer(int *plateau, char **joueur, int *points, int j);
-int aFiniTerrainAdverse(int j, int *joueur, int CaseChoisie);
-int hasWin();
+int isTerrainAdverse(int j, int CaseChoisie);
+int hasWin(int *points, char **joueur);
+
+// Regle à dev : Si un coup devait prendre toutes les graines adverses, alors le coup peut être joué, mais aucune capture n'est faite : il ne faut pas « affamer » l'adversaire.
 
 int main(int argc, char **argv)
 {
@@ -20,23 +22,23 @@ int main(int argc, char **argv)
     // initialisation du plateau
     for (i = 0; i < 12; i++)
     {
-        plateau[i] = 4;
+        plateau[i] = 2;
         authorizedMove[i] = 0;
     }
 
     // affichage du plateau
-    afficherPlateau(plateau, joueur);
+    afficherPlateau(plateau, joueur, points);
 
     // boucle de jeu
-    while (hasWin() == 0)
+    while (1)
     {
         // joueur 1
         jouer(plateau, joueur, points, 0);
-        afficherPlateau(plateau, joueur);
+        afficherPlateau(plateau, joueur, points);
 
         // joueur 2
         jouer(plateau, joueur, points, 1);
-        afficherPlateau(plateau, joueur);
+        afficherPlateau(plateau, joueur, points);
     }
 }
 
@@ -126,26 +128,35 @@ void jouer(int *plateau, char **joueur, int *points, int j)
         graines--;
     }
 
-    // si la case d'arrivée est adverse et 1 < nbGraine < 4, on prend les graines
-    if (aFiniTerrainAdverse(j, plateau, caseChoisie) && plateau[caseChoisie] > 1 && plateau[caseChoisie] < 4)
+    // tant que la case d'arrivée est adverse et 1 < nbGraine < 4, on prend les graines
+    while (isTerrainAdverse(j, caseChoisie) && plateau[caseChoisie] > 1 && plateau[caseChoisie] < 4)
     {
-        // printf("Vous avez pris les graines de la case %d !\r\n", caseChoisie);
-        // plateau[caseChoisie] = 0;
-        printf("Je peu prendre la case %d", caseChoisie);
+        printf("\033[1m%s prend les graines de la case %d\033[0m\r\n", joueur[j], caseChoisie);
+        points[j] += plateau[caseChoisie];
+        plateau[caseChoisie] = 0;
+
+        if (j == 0)
+        {
+            caseChoisie--;
+        }
+        if (j == 1)
+        {
+            caseChoisie++;
+        }
     }
 }
 
-void afficherPlateau(int *plateau, char **joueur)
+void afficherPlateau(int *plateau, char **joueur, int *points)
 {
-    printf("Joueur 1 : %s\r\n", joueur[0]);
-    printf("Joueur 2 : %s\r\n", joueur[1]);
+    printf("\e[1;33m\033[1mJoueur 1 : %s\033[0m\r\n", joueur[0]);
+    printf("\e[0;35m\033[1mJoueur 2 : %s\033[0m\r\n", joueur[1]);
 
     printf("\r\n");
 
     int i = 0;
     printf("Case: –00– –01– –02– –03– –04– –05– \r\n");
-    printf("     ––––––––––––––––––––––––––––––– \r\n");
-    printf("J1 : ");
+    printf("––––– –––––––––––––––––––––––––––––––   –––––––––– \r\n");
+    printf("\e[1;33m\033[1mJ1 :  ");
     for (i = 0; i < 6; i++)
     {
         if (plateau[i] < 10)
@@ -157,10 +168,10 @@ void afficherPlateau(int *plateau, char **joueur)
             printf("| %d ", plateau[i]);
         }
     }
-    printf("|\r\n");
-    printf("      –––– –––– –––– –––– –––– –––– \r\n");
+    printf("|     %d pts\033[0m\r\n", points[0]);
+    printf("––––– –––––––––––––––––––––––––––––––   –––––––––– \r\n");
 
-    printf("J2 : ");
+    printf("\e[0;35m\033[1mJ2 :  ");
     for (i = 6; i < 12; i++)
     {
         if (plateau[i] < 10)
@@ -173,8 +184,8 @@ void afficherPlateau(int *plateau, char **joueur)
         }
     }
 
-    printf("|\r\n");
-    printf("     ––––––––––––––––––––––––––––––– \r\n");
+    printf("|     %d pts\033[0m\r\n", points[1]);
+    printf("––––– –––––––––––––––––––––––––––––––   –––––––––– \r\n");
     printf("Case: –06– –07– –08– –09– –10– –11– \r\n\r\n");
 }
 
@@ -236,7 +247,7 @@ int hasWin(int *points, char **joueur)
     return 2;
 }
 
-int aFiniTerrainAdverse(int j, int *plateau, int caseChoisie)
+int isTerrainAdverse(int j, int caseChoisie)
 {
     int tableauJ1[] = {0, 1, 2, 3, 4, 5};
     int tableauJ2[] = {6, 7, 8, 9, 10, 11};
@@ -245,9 +256,10 @@ int aFiniTerrainAdverse(int j, int *plateau, int caseChoisie)
     {
         for (int i = 0; i < 6; i++)
         {
-            if (plateau[tableauJ2[i]] == caseChoisie)
+            // printf("J%d – %d – %d\r\n", j, plateau[tableauJ2[i]], caseChoisie);
+            if (tableauJ2[i] == caseChoisie)
             {
-                printf("terrain adverse");
+                // printf("Fini terrain adverse\r\n");
                 return 1;
             }
         }
@@ -256,9 +268,10 @@ int aFiniTerrainAdverse(int j, int *plateau, int caseChoisie)
     {
         for (int i = 0; i < 6; i++)
         {
-            if (plateau[tableauJ1[i]] == caseChoisie)
+            // printf("J%d – %d – %d", j, plateau[tableauJ1[i]], caseChoisie);
+            if (tableauJ1[i] == caseChoisie)
             {
-                printf("terrain adverse");
+                // printf("Fini terrain adverse\r\n");
                 return 1;
             }
         }
