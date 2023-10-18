@@ -3,9 +3,10 @@
 #include <stdio.h>
 
 void afficherPlateau(int *plateau, char **joueur, int *points);
-void jouer(int *plateau, char **joueur, int *points, int j);
+void jouer(int *plateau, char **joueur, int* authorizedMove, int *points, int j);
 int isTerrainAdverse(int j, int CaseChoisie);
 int updateAuthorizedMove(int *authorizedMove, int *plateau, int j);
+int checkStarvation(int *plateau, int *authorizedMove, int j);
 int hasWin(int *points, char **joueur);
 int isFinish(int *plateau, int *points);
 
@@ -32,21 +33,68 @@ int main(int argc, char **argv)
     afficherPlateau(plateau, joueur, points);
 
     // boucle de jeu
-    while (isFinish() == 0)
+    while (isFinish(plateau, points) == 0)
     {
         // joueur 1
-        jouer(plateau, joueur, points, 0);
+        jouer(plateau, joueur, authorizedMove, points, 0);
         afficherPlateau(plateau, joueur, points);
 
         // joueur 2
-        jouer(plateau, joueur, points, 1);
+        jouer(plateau, joueur, authorizedMove, points, 1);
         afficherPlateau(plateau, joueur, points);
     }
 }
 
 int isFinish(int *plateau, int *points)
 {
-    
+    int i, sumJ1 = 0, sumJ2 = 0;
+
+    // Calculate the sum of seeds for each player
+    for (i = 0; i < 6; i++)
+    {
+        sumJ1 += plateau[i];
+    }
+    for (i = 6; i < 12; i++)
+    {
+        sumJ2 += plateau[i];
+    }
+
+    // Check if either player has won
+    if ((sumJ1 == 0 || sumJ2 == 0) && (checkStarvation(plateau, NULL, 0) == 0) && (checkStarvation(plateau, NULL, 1) == 0))
+    {
+        return 1;
+    }
+    {
+        // The game is over, so distribute remaining seeds to the winner's side
+        for (i = 0; i < 6; i++)
+        {
+            points[1] += plateau[i];
+            plateau[i] = 0;
+        }
+        for (i = 6; i < 12; i++)
+        {
+            points[0] += plateau[i];
+            plateau[i] = 0;
+        }
+
+        // Determine the winner
+        if (points[0] > points[1])
+        {
+            printf("J1 wins!\n");
+        }
+        else if (points[1] > points[0])
+        {
+            printf("J2 wins!\n");
+        }
+        else
+        {
+            printf("It's a tie!\n");
+        }
+
+        return 1;
+    }
+
+    return 0;
 }
 
 int updateAuthorizedMove(int *authorizedMove, int *plateau, int j)
@@ -218,7 +266,7 @@ void afficherPlateau(int *plateau, char **joueur, int *points)
 
 int checkStarvation(int *plateau, int *authorizedMove, int j)
 {
-    int i, offset, sum = 0;
+    int i, sum = 0;
     int starvation = 0;
 
     if (j == 0)
