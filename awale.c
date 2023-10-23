@@ -8,7 +8,7 @@ int isTerrainAdverse(int j, int CaseChoisie);
 int updateAuthorizedMove(int *authorizedMove, int *plateau, int j);
 int checkStarvation(int *plateau, int *authorizedMove, int j);
 int hasWin(int *points, char **joueur);
-int isFinish(int *plateau, int *points, int *authorizedMove);
+int isFinish(int *plateau, int *points, int *authorizedMove, int *joueur);
 
 // Regle à dev : Si un coup devait prendre toutes les graines adverses, alors le coup peut être joué, mais aucune capture n'est faite : il ne faut pas « affamer » l'adversaire.
 
@@ -23,17 +23,26 @@ int main(int argc, char **argv)
     char *joueur[2] = {"Tim", "Hugo"};
 
     // initialisation du plateau
+
     for (i = 0; i < 12; i++)
     {
         plateau[i] = 4;
         authorizedMove[i] = 0;
     }
 
+    for (i = 6; i < 12; i++)
+    {
+        plateau[i] = 0;
+    }
+
+    plateau[6] = 1;
+    plateau[7] = 1;
+
     // affichage du plateau
     afficherPlateau(plateau, joueur, points);
 
     // boucle de jeu
-    while (isFinish(plateau, points, authorizedMove) == 0)
+    while (isFinish(plateau, points, authorizedMove, joueur) == 0)
     {
         // joueur 1
         jouer(plateau, joueur, authorizedMove, points, 0);
@@ -45,7 +54,7 @@ int main(int argc, char **argv)
     }
 }
 
-int isFinish(int *plateau, int *points, int *authorizedMove)
+int isFinish(int *plateau, int *points, int *authorizedMove, int *joueur)
 {
     int i, sumJ1 = 0, sumJ2 = 0;
 
@@ -77,11 +86,11 @@ int isFinish(int *plateau, int *points, int *authorizedMove)
         // Determine the winner
         if (points[0] > points[1])
         {
-            printf("J1 wins!\n");
+            printf("%s wins!\n", joueur[0]);
         }
         else if (points[1] > points[0])
         {
-            printf("J2 wins!\n");
+            printf("%s wins!\n", joueur[1]);
         }
         else
         {
@@ -115,8 +124,8 @@ void jouer(int *plateau, char **joueur, int *authorizedMove, int *points, int j)
     printf("************************************ \r\n");
     if (updateAuthorizedMove(authorizedMove, plateau, j) == 1)
     {
-        printf("\e[0;35mStarvation !\033[0m\r\n");
-        printf("Cases possibles : ");
+        printf("\e[0;31m\033[1mStarvation !\033[0m\r\n");
+        printf("\e[0;32m\033[1mCases possibles : ");
         for (i = 0; i < 6; i++)
         {
             if (authorizedMove[i] == 1)
@@ -124,19 +133,19 @@ void jouer(int *plateau, char **joueur, int *authorizedMove, int *points, int j)
                 printf("%d ", i + j * 6);
             }
         }
-        printf("\r\n");
+        printf("\033[0m\r\n");
     }
     while (validMove != 1)
     {
         if (j == 0)
         {
-            printf("%s, choisissez une case (entre 0 et 5): ", joueur[j]);
+            printf("%s, choisissez une case non-vide (entre 0 et 5): ", joueur[j]);
             scanf("%d", &caseChoisie);
             printf("\r\n");
         }
         else
         {
-            printf("%s, choisissez une case (entre 6 et 11): ", joueur[j]);
+            printf("%s, choisissez une case non-vide (entre 6 et 11): ", joueur[j]);
             scanf("%d", &caseChoisie);
             printf("\r\n");
         }
@@ -145,7 +154,7 @@ void jouer(int *plateau, char **joueur, int *authorizedMove, int *points, int j)
         {
             if (authorizedMove[caseChoisie - j * 6] == 0)
             {
-                printf("**/!\\ Choix non valide !**\r\n");
+                printf("\e[0;31m\033[1m/!\\ Choix non valide !\033[0m\r\n");
                 validMove = 0;
             }
             else
@@ -155,7 +164,7 @@ void jouer(int *plateau, char **joueur, int *authorizedMove, int *points, int j)
         }
         else
         {
-            printf("**/!\\ Choix non valide !**\r\n");
+            printf("\e[0;31m\033[1m/!\\ Choix non valide !\033[0m\r\n");
             validMove = 0;
         }
     }
@@ -234,9 +243,9 @@ void jouer(int *plateau, char **joueur, int *authorizedMove, int *points, int j)
     }
 
     // si la prise de graine précedente entraine une stravation, on restore le plateau et les points comme il était avant
-    if (hasStarvation(plateau))
+    if (checkStarvation(plateau, authorizedMove, j))
     {
-        printf("\033[1m%s a affamé son adversaire !\033[0m\r\n", joueur[j]);
+        printf("\033[1m%s a affamé son adversaire ! Il ne prend donc pas les graines...\033[0m\r\n", joueur[j]);
         for (int i = 0; i < 12; i++)
         {
             plateau[i] = plateauSave[i];
