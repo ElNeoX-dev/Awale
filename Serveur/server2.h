@@ -14,8 +14,6 @@
 #include <unistd.h> /* close */
 #include <netdb.h>  /* gethostbyname */
 #include <stdarg.h>
-#include "../Serveur/awale.h"
-#include "client2.h"
 #define INVALID_SOCKET -1
 #define SOCKET_ERROR -1
 #define closesocket(s) close(s)
@@ -29,6 +27,9 @@ typedef struct in_addr IN_ADDR;
 #error not defined for this platform
 
 #endif
+
+#include "../Serveur/awale.h"
+#include "client2.h"
 
 #define CRLF "\r\n"
 #define PORT 1977

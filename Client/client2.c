@@ -32,12 +32,14 @@ static void app(const char *address, const char *name)
    int isRegistered = 0;
    fd_set rdfs;
    char *registerMsg = malloc(1024 * sizeof(char));
+
    strcat(registerMsg, "inscription:");
    strcat(registerMsg, name);
-   strcat(registerMsg, "\n");
+   strcat(registerMsg, "\r\n");
    /* send our name */
    write_server(sock, name);
-   write_server(sock, registerMsg);
+
+   int firstTime = 0 ;
 
    while (1)
    {
@@ -58,21 +60,27 @@ static void app(const char *address, const char *name)
       /* something from standard input : i.e keyboard */
       if (FD_ISSET(STDIN_FILENO, &rdfs))
       {
-         fgets(buffer, BUF_SIZE - 1, stdin);
-         {
-            char *p = NULL;
-            p = strstr(buffer, "\n");
-            if (p != NULL)
+         if (firstTime == 0) {
+            firstTime = 1;
+            write_server(sock, registerMsg);
+         } else {
+            fgets(buffer, BUF_SIZE - 1, stdin);
             {
-               *p = 0;
+               char *p = NULL;
+               p = strstr(buffer, "\n");
+               if (p != NULL)
+               {
+                  *p = 0;
+               }
+               else
+               {
+                  /* fclean */
+                  buffer[BUF_SIZE - 1] = 0;
+               }
             }
-            else
-            {
-               /* fclean */
-               buffer[BUF_SIZE - 1] = 0;
-            }
+            write_server(sock, buffer);
          }
-         write_server(sock, buffer);
+         //write_server(sock, registerMsg);
       }
       else if (FD_ISSET(sock, &rdfs))
       {
