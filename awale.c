@@ -1,14 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-
-void afficherPlateau(int *plateau, char **joueur, int *points);
-void jouer(int *plateau, char **joueur, int *authorizedMove, int *points, int j);
-int isTerrainAdverse(int j, int CaseChoisie);
-int updateAuthorizedMove(int *authorizedMove, int *plateau, int j);
-int checkStarvation(int *plateau, int *authorizedMove, int j);
-int hasWin(int *points, char **joueur);
-int isFinish(int *plateau, int *points, int *authorizedMove, int *joueur);
+#include "awale.h"
 
 // Regle à dev : Si un coup devait prendre toutes les graines adverses, alors le coup peut être joué, mais aucune capture n'est faite : il ne faut pas « affamer » l'adversaire.
 
