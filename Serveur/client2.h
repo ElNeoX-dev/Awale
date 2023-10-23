@@ -9,4 +9,14 @@ typedef struct
    char name[BUF_SIZE];
 }Client;
 
+enum States {
+   MENU,
+   PLAYING,
+   WAITING,
+   REQUESTING,
+   RESPONDING
+};
+
+
 #endif /* guard */
+
