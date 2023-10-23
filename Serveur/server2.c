@@ -4,8 +4,7 @@
 #include <string.h>
 
 #include "server2.h"
-#include "client2.h"
-#include "./../awale.h"
+#include "awale.h"
 
 static void init(void)
 {
@@ -39,37 +38,16 @@ static void app(void)
    }
 
    // maxi 20 joueurs online (si tous les joueurs sont connectés)
-   char **allUserOnline = malloc(NBMAXJOUEUR * sizeof(char *));
+   Client **allUserOnline = malloc(NBMAXJOUEUR * sizeof(Client *));
    for (int i = 0; i < NBMAXJOUEUR; i++)
    {
       // maxi 20 caractères par pseudo
-      allUserOnline[i] = malloc(TAILLEMAXCHARJOUEUR * sizeof(char));
+      allUserOnline[i] = malloc(sizeof(Client));
+      allUserOnline[i] = NULL;
    }
-
-   // initialisation des pseudos
-   for (int i = 0; i < 5; i++)
-   {
-      strcpy(allUser[i], "Pseudo");
-      strcpy(allUserOnline[i], "PseudoOnl");
-   }
-
-   int *plateau = malloc(12 * sizeof(int));
-   int *points = malloc(2 * sizeof(int));
-   char *joueur[2] = {"Tim", "Hugo"};
-   int i = 0;
-
-   // initialisation du plateau
-   for (i = 0; i < 12; i++)
-   {
-      plateau[i] = 4;
-   }
-
-   for (i = 6; i < 12; i++)
-   {
-      plateau[i] = 0;
-   }
-
-   char *myUsername = malloc(TAILLEMAXCHARJOUEUR * sizeof(char));
+   // faire une liste de joueur Online
+   // checker les states pour regarder s'ils sont en attente
+   // sinon on les remet en non WAITING
 
    /* FIN INIT*/
 
@@ -163,86 +141,250 @@ static void app(void)
                else
                {
                   send_message_to_all_clients(clients, client, actual, buffer, 0);
-
-                  if (strcmp(buffer, "afficher\0\n") == 0)
+                  if (client.state == MENU)
                   {
-                     printf("Il a ecrit afficher\n");
-                     char *affichagePlateau = malloc(1024 * sizeof(char));
-                     genererAffPlateau(plateau, joueur, points, clients[i].sock, affichagePlateau);
-                     write_client(clients[i].sock, affichagePlateau);
-                     free(affichagePlateau);
-                  }
-                  else if (strcmp(buffer, "action\0\n") == 0)
-                  {
-                     printf("Il a ecrit ACTION\n");
 
-                     write_client(clients[i].sock, ROUGE BOLD "/!\\ Choix non valide !\r\n" RESET);
-                  }
-                  else if (strstr(buffer, "inscription") != NULL)
-                  {
-                     printf("Il a ecrit INSCRIPTION\n");
-                     char *username = strtok(buffer, ":");
-                     username = strtok(NULL, ":");
-                     printf("username = %s\r\n", username);
-
-                     sinscrire(clients[i].sock, username, allUser, allUserOnline, myUsername);
-                  }
-                  else if (strcmp(buffer, "listepseudo\0\n") == 0)
-                  {
-                     printf("Il a ecrit LISTE PSEUDO\n");
-                     char *listePseudo = malloc(NBMAXJOUEUR * (TAILLEMAXCHARJOUEUR + 2) * sizeof(char));
-                     listerJoueur(allUser, listePseudo);
-
-                     write_client(clients[i].sock, BOLD "Voici la liste des pseudos : \r\n" RESET "%s", listePseudo);
-
-                     free(listePseudo);
-                  }
-                  else if (strcmp(buffer, "listepseudoonline\0\n") == 0)
-                  {
-                     printf("Il a ecrit LISTE PSEUDO ONLINE\n");
-                     char *listePseudoOnline = malloc(NBMAXJOUEUR * (TAILLEMAXCHARJOUEUR + 2) * sizeof(char));
-                     listerJoueur(allUserOnline, listePseudoOnline);
-
-                     write_client(clients[i].sock, BOLD "Voici la liste des pseudos : \r\n" RESET "%s", listePseudoOnline);
-
-                     free(listePseudoOnline);
-                  }
-                  else if (strcmp(buffer, "quitter\0\n") == 0)
-                  {
-                     printf("Il a ecrit QUITTER\n");
-
-                     // se deconnecter
-                     for (int j = 0; j < NBMAXJOUEUR; j++)
+                     if (strcmp(buffer, "afficher\0\n") == 0)
                      {
-                        if (strcmp(allUserOnline[j], myUsername) == 0)
+                        printf("Il a ecrit afficher\n");
+                        /*char *affichagePlateau = malloc(1024 * sizeof(char));
+                        genererAffPlateau(plateau, joueur, points, clients[i].sock, affichagePlateau);
+                        write_client(clients[i].sock, affichagePlateau);
+                        free(affichagePlateau);*/
+                     }
+                     else if (strcmp(buffer, "action\0\n") == 0)
+                     {
+                        printf("Il a ecrit ACTION\n");
+
+                        write_client(clients[i].sock, ROUGE BOLD "/!\\ Choix non valide !\r\n" RESET);
+                     }
+                     else if (strstr(buffer, "inscription") != NULL)
+                     {
+                        printf("Il a ecrit INSCRIPTION\n");
+                        char *username = strtok(buffer, ":");
+                        username = strtok(NULL, ":");
+                        printf("username = %s\r\n", username);
+
+                        sinscrire(username, allUser, allUserOnline, &client);
+                     }
+                     else if (strcmp(buffer, "listepseudo\0\n") == 0)
+                     {
+                        printf("Il a ecrit LISTE PSEUDO\n");
+                        char *listePseudo = malloc(NBMAXJOUEUR * (TAILLEMAXCHARJOUEUR + 2) * sizeof(char));
+                        listerJoueur(allUser, listePseudo);
+
+                        write_client(clients[i].sock, BOLD "Voici la liste des pseudos : \r\n" RESET "%s", listePseudo);
+
+                        free(listePseudo);
+                     }
+                     else if (strcmp(buffer, "listepseudoonline\0\n") == 0)
+                     {
+                        printf("Il a ecrit LISTE PSEUDO ONLINE\n");
+                        char *listePseudoWaiting = malloc(NBMAXJOUEUR * (TAILLEMAXCHARJOUEUR + 2) * sizeof(char));
+                        listerJoueurWaiting(allUserOnline, listePseudoWaiting);
+
+                        write_client(clients[i].sock, BOLD "Voici la liste des pseudos : \r\n" RESET "%s", listePseudoWaiting);
+
+                        free(listePseudoWaiting);
+                     }
+                     else if (strcmp(buffer, "jouer\0\n") == 0)
+                     {
+                        printf("Il a ecrit JOUER\n");
+                        client.state = LOBBY;
+                        write_client(clients[i].sock, "0: defier un joueur\r\n1: attendre une invitation\r\n");
+                     }
+                     else if (strcmp(buffer, "quitter\0\n") == 0)
+                     {
+                        printf("Il a ecrit QUITTER\n");
+
+                        // se deconnecter
+                        for (int j = 0; j < NBMAXJOUEUR; j++)
                         {
-                           strcpy(allUserOnline[j], "");
-                           break;
+                           if (strcmp(allUserOnline[j]->name, client.name) == 0)
+                           {
+                              // on le supprime des joueur online
+                              allUserOnline[j] = NULL;
+                              break;
+                           }
+                        }
+
+                        write_client(clients[i].sock, BLEU BOLD "Vous avez quitté la partie.\r\n" RESET);
+                        closesocket(clients[i].sock);
+                        remove_client(clients, i, &actual);
+                        strncpy(buffer, client.name, BUF_SIZE - 1);
+                        strncat(buffer, " disconnected !", BUF_SIZE - strlen(buffer) - 1);
+                        send_message_to_all_clients(clients, client, actual, buffer, 1);
+                     }
+                     else if (strcmp(buffer, "help\0\n") == 0)
+                     {
+                        printf("Il a ecrit HELP\n");
+
+                        char help[] = {VERT BOLD "Voici la liste des commandes utilisables :\r\n" RESET
+                                           VERT "  - afficher : affiche le plateau de jeu\r\n"
+                                                 "  - action : permet de jouer un coup\r\n"
+                                                 "  - help : affiche la liste des commandes utilisables\r\n"
+                                                 "  - quitter : permet de quitter le jeu\r\n" RESET};
+
+                        write_client(clients[i].sock, "%s", help);
+                     }
+                     else
+                     {
+                        write_client(clients[i].sock, ROUGE BOLD "Commande non reconnue : %s" RESET "\nVeullez réessayer.\r\n", buffer);
+                     }
+                  }
+                  else if (client.state == LOBBY)
+                  {
+                     if (strcmp(buffer, "0\0\n") == 0)
+                     {
+                        client.state = REQUESTING;
+                        char *listePseudoOnline = malloc(NBMAXJOUEUR * (TAILLEMAXCHARJOUEUR + 2) * sizeof(char));
+                        listerJoueurWaiting(allUserOnline, listePseudoOnline);
+                        write_client(clients[i].sock, BOLD "Voici la liste des joueurs en attente d'invitation: \r\n" RESET);
+                        write_client(clients[i].sock, listePseudoOnline);
+                        write_client(clients[i].sock, BOLD "Veuillez entrer le pseudo du joueur que vous voulez defier : \r\n" RESET);
+                     }
+                     else if (strcmp(buffer, "1\0\n") == 0)
+                     {
+                        client.state = WAITING;
+                        // Ajouter son pseudo a la liste des joueurs WAITING
+                        /*
+                        for (int j = 0; j < NBMAXJOUEUR; j++)
+                        {
+                           if (strcmp(allUserOnline[j]->name, "") == 0)
+                           {
+                              allUserOnline[j]->name = client.name;
+                              break;
+                           }
+                        }
+                        */
+
+                        write_client(client.sock, VERT BOLD "En attente ...\r\nEnvoyer n'importe quoi pour annuler" RESET);
+                     }
+                     else if (strlen(buffer) > 0)
+                     {
+                        write_client(client.sock, "Commande incorrecte\r\n");
+                     }
+                  }
+                  else if (client.state == REQUESTING)
+                  {
+                     if (strlen(buffer) > 0)
+                     {
+                        int playerFound = 0;
+                        // matching client
+                        for (int j = 0; j < NBMAXJOUEUR; j++)
+                        {
+                           if (strcmp(allUserOnline[j]->name, buffer) == 0)
+                           {
+                              allUserOnline[j]->state = CHALLENGED;
+                              client.state = WAITING_RESPONSE;
+
+                              // on cree la partie et on ajoute les deux joueurs
+                              Game game;
+                              game.plateau = malloc(12 * sizeof(int));
+                              game.authorizedMove = malloc(12 * sizeof(int));
+                              game.points = malloc(2 * sizeof(int));
+                              game.clients = malloc(2 * sizeof(Client *));
+
+                              game.clients[0] = &client; // 0 = celui qui request
+                              game.clients[1] = allUserOnline[j];
+
+                              client.game = &game;
+                              allUserOnline[j]->game = &game;
+
+                              playerFound = 1;
+                              break;
+                           }
+                        }
+                        if (playerFound == 0)
+                        {
+                           write_client(clients[i].sock, ROUGE BOLD "Joueur introuvable\r\n" RESET);
+                           client.state = LOBBY;
                         }
                      }
-
-                     write_client(clients[i].sock, BLEU BOLD "Vous avez quitté la partie.\r\n" RESET);
-                     closesocket(clients[i].sock);
-                     remove_client(clients, i, &actual);
-                     strncpy(buffer, client.name, BUF_SIZE - 1);
-                     strncat(buffer, " disconnected !", BUF_SIZE - strlen(buffer) - 1);
-                     send_message_to_all_clients(clients, client, actual, buffer, 1);
                   }
-                  else if (strcmp(buffer, "help\0\n") == 0)
+                  else if (client.state == WAITING)
                   {
-                     printf("Il a ecrit HELP\n");
-
-                     char help[] = {VERT BOLD "Voici la liste des commandes utilisables :\r\n" RESET
-                                        VERT "  - afficher : affiche le plateau de jeu\r\n"
-                                              "  - action : permet de jouer un coup\r\n"
-                                              "  - help : affiche la liste des commandes utilisables\r\n"
-                                              "  - quitter : permet de quitter le jeu\r\n" RESET};
-
-                     write_client(clients[i].sock, "%s", help);
+                     if (strcmp(buffer, "0\0\n"))
+                     {
+                        /*
+                        for (int j = 0; j < NBMAXJOUEUR; j++)
+                        {
+                           if (strcmp(allUserWaiting[j], client.name) == 0)
+                           {
+                              allUserWaiting[j] = ""; // on le supprime de la liste d'attente
+                              break;
+                           }
+                        }
+                        */
+                        client.state = MENU;
+                        write_client(client.sock, BOLD "\nEntrez une commande ou faites \"help\" pour accéder à la liste des commandes disponibles : " RESET);
+                     }
                   }
-                  else
+                  else if (client.state == CHALLENGED)
                   {
-                     write_client(clients[i].sock, ROUGE BOLD "Commande non reconnue : %s" RESET "\nVeullez réessayer.\r\n", buffer);
+                     client.state = RESPONDING;
+                     write_client(client.sock, "**Machin** vous a défié\r\n0: Accepter\r\n1: Refuser\r\n");
+                  }
+                  else if (client.state == WAITING_RESPONSE)
+                  {
+                  }
+                  else if (client.state == RESPONDING)
+                  {
+                     if (strcmp(buffer, "0\0\n") == 0)
+                     {
+                        /*
+                        Game game;
+                        game.plateau = malloc(12 * sizeof(int));
+                        game.authorizedMove = malloc(12 * sizeof(int));
+                        game.points = malloc(2 * sizeof(int));
+                        game.clients = malloc(2 * sizeof(Client *));
+                        */
+
+                        // tirer un nombre aleatoire entre 0 et 1 et defini s'il est le joueur 0 ou 1
+                        if (rand() % 2)
+                        {
+                           client.id = 0;
+                           client.game->clients[0]->id = 1;
+                        }
+                        else
+                        {
+                           client.id = 1;
+                           client.game->clients[0]->id = 0;
+                        }
+
+                        client.state = PLAYING;
+                     }
+                     else if (strcmp(buffer, "1\0\n") == 0)
+                     {
+                        client.state = WAITING;
+                     }
+                  }
+                  else if (client.state == PLAYING)
+                  {
+                     char *affichagePlateau = malloc(1024 * sizeof(char));
+                     // affichage du plateau
+                     genererAffPlateau(client.game, affichagePlateau);
+                     write_to_players(client.game->clients, affichagePlateau);
+                     jouer(client.game, client.id);
+
+                     /*                      // boucle de jeu
+                                          while (isFinish(client.game) == 0)
+                                          {
+                                             // joueur 1
+                                             jouer(client.game, 0);
+                                             afficherPlateau(client.game, affichagePlateau);
+                                             write_to_players(client.game->clients, affichagePlateau);
+
+                                             // joueur 2
+                                             jouer(client.game, 1);
+                                             afficherPlateau(client.game, affichagePlateau);
+                                          } */
+                  }
+                  else if (client.state == PLAYING_WAITING)
+                  {
+                  }
+                  else if (client.state == WAITING_FOR_PLAY && strlen(buffer) > 0)
+                  {
                   }
                }
                break;
@@ -367,6 +509,25 @@ static void write_client(SOCKET sock, const char *message, ...)
    va_end(args);
 }
 
+static void challenge(Client *requestingClient, Client *challengedClient)
+{
+   if (challengedClient->state == WAITING)
+   {
+      requestingClient->state = REQUESTING;
+      challengedClient->state = RESPONDING;
+      char *message = malloc(1024 * sizeof(char));
+      strcat(message, requestingClient->name);
+      strcat(message, " is challenging you\r\n");
+      strcat(message, "0: Refuse, 1:Accept\r\n");
+      write_client(requestingClient->sock, "Waiting for response\r\n");
+      write_client(challengedClient->sock, message);
+   }
+   else
+   {
+      write_client(requestingClient->sock, "This player is not available\r\n");
+   }
+}
+
 static void write_to_players(Client **clients, const char *message, ...)
 {
    va_list args;
@@ -398,87 +559,35 @@ int main(int argc, char **argv)
    return EXIT_SUCCESS;
 }
 
-void genererAffPlateau(int *plateau, char **joueur, int *points, int newsockfd, char *affichagePlateau)
-{
-   char buffer[1024];
-   sprintf(buffer, JAUNE BOLD "Joueur 1 : %s\r\n" RESET, joueur[0]);
-   strcat(affichagePlateau, buffer);
-   sprintf(buffer, VIOLET BOLD "Joueur 2 : %s\r\n" RESET, joueur[1]);
-   strcat(affichagePlateau, buffer);
-
-   sprintf(buffer, "\r\n");
-   strcat(affichagePlateau, buffer);
-
-   int i = 0;
-   sprintf(buffer, "Case:  –00– –01– –02– –03– –04– –05– \r\n");
-   strcat(affichagePlateau, buffer);
-   sprintf(buffer, "––––– –––––––––––––––––––––––––––––––   –––––––––– \r\n");
-   strcat(affichagePlateau, buffer);
-   sprintf(buffer, JAUNE BOLD "J1 :  ");
-   strcat(affichagePlateau, buffer);
-   for (i = 0; i < 6; i++)
-   {
-      if (plateau[i] < 10)
-      {
-         sprintf(buffer, "| 0%d ", plateau[i]);
-         strcat(affichagePlateau, buffer);
-      }
-      else
-      {
-         sprintf(buffer, "| %d ", plateau[i]);
-         strcat(affichagePlateau, buffer);
-      }
-   }
-   sprintf(buffer, "|     %d pts\r\n" RESET, points[0]);
-   strcat(affichagePlateau, buffer);
-   sprintf(buffer, "––––– –––––––––––––––––––––––––––––––   –––––––––– \r\n");
-   strcat(affichagePlateau, buffer);
-
-   sprintf(buffer, VIOLET BOLD "J2 :  ");
-   strcat(affichagePlateau, buffer);
-   for (i = 6; i < 12; i++)
-   {
-      if (plateau[i] < 10)
-      {
-         sprintf(buffer, "| 0%d ", plateau[i]);
-         strcat(affichagePlateau, buffer);
-      }
-      else
-      {
-         sprintf(buffer, "| %d ", plateau[i]);
-         strcat(affichagePlateau, buffer);
-      }
-   }
-
-   sprintf(buffer, "|     %d pts\r\n" RESET, points[1]);
-   strcat(affichagePlateau, buffer);
-   sprintf(buffer, "––––– –––––––––––––––––––––––––––––––   –––––––––– \r\n");
-   strcat(affichagePlateau, buffer);
-   sprintf(buffer, "Case:  –06– –07– –08– –09– –10– –11– \r\n\r\n");
-   strcat(affichagePlateau, buffer);
-}
-
-void sinscrire(int newsockfd, char *username, char **allUser, char **allUserOnline, char *myUsername)
+void sinscrire(char *username, char **allUser, Client **allUserOnline, Client *client)
 {
    int joueurNonInscrit = 1; // 0 = inscrit ; 1 = non inscrit
    for (int j = 0; j < NBMAXJOUEUR; j++)
    {
       // printf("allUser[j] = %s\r\n", allUser[j]);
 
-      if (strcmp(allUserOnline[j], username) == 0)
+      if (strcmp(allUserOnline[j]->name, username) == 0)
       {
          // joueur deja en ligne -> erreur faut un autre nom d'utilisateur
          joueurNonInscrit = 0;
-         write_client(newsockfd, "0");
+         write_client(client->sock, "0");
          break;
       }
       else if (strcmp(allUser[j], username) == 0)
       {
          // joueur deja inscrit -> Welcome back
-         strcpy(allUserOnline[j], username);
-         strcpy(myUsername, username);
+         strcpy(client->name, username);
          joueurNonInscrit = 0;
-         write_client(newsockfd, "2");
+         write_client(client->sock, "2");
+
+         for (int j = 0; j < NBMAXJOUEUR; j++)
+         {
+            if (allUserOnline[j] == NULL)
+            {
+               allUserOnline[j] = client;
+            }
+         }
+
          break;
       }
    }
@@ -495,9 +604,11 @@ void sinscrire(int newsockfd, char *username, char **allUser, char **allUserOnli
             strcpy(allUser[j], username);
             writeAllUser = 1;
          }
-         if (strcmp(allUserOnline[j], "") == 0 && writeAllUserOnline == 0)
+         //
+
+         if (allUserOnline[j] == NULL && writeAllUserOnline == 0)
          {
-            strcpy(allUserOnline[j], username);
+            allUserOnline[j] = client;
             writeAllUserOnline = 1;
          }
          // printf("2allUser[j] = %s\r\n", allUser[j]);
@@ -506,8 +617,8 @@ void sinscrire(int newsockfd, char *username, char **allUser, char **allUserOnli
             break;
          }
       }
-      strcpy(myUsername, username);
-      write_client(newsockfd, "1");
+      strcpy(client->name, username);
+      write_client(client->sock, "1");
    }
 }
 
@@ -519,6 +630,21 @@ void listerJoueur(char **allUser, char *listePseudo)
       {
          strcat(listePseudo, allUser[j]);
          strcat(listePseudo, "\r\n");
+      }
+   }
+}
+
+void listerJoueurWaiting(Client **allUserOnline, char *listePseudo)
+{
+   for (int j = 0; j < NBMAXJOUEUR; j++)
+   {
+      if (allUserOnline[j]->state == WAITING)
+      {
+         if (strcmp(allUserOnline[j]->name, "") != 0)
+         {
+            strcat(listePseudo, allUserOnline[j]->name);
+            strcat(listePseudo, "\r\n");
+         }
       }
    }
 }

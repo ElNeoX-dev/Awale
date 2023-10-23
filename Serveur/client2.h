@@ -1,22 +1,41 @@
 #ifndef CLIENT_H
 #define CLIENT_H
 
-#include "server2.h"
+#define BUF_SIZE 1024
 
-typedef struct
+typedef int SOCKET;
+
+enum States
+{
+   MENU,
+   LOBBY,
+   PLAYING,
+   HASPLAYED,
+   WAITING_FOR_PLAY,
+   PLAYING_WAITING,
+   CHALLENGED,
+   WAITING_RESPONSE,
+   WAITING,
+   REQUESTING,
+   RESPONDING,
+   DISCONNECTED,
+};
+
+typedef struct Client
 {
    SOCKET sock;
    char name[BUF_SIZE];
-}Client;
+   enum States state;
+   struct Game *game;
+   int id;
+} Client;
 
-enum States {
-   MENU,
-   PLAYING,
-   WAITING,
-   REQUESTING,
-   RESPONDING
-};
-
+typedef struct Game
+{
+   int *plateau;
+   int *authorizedMove;
+   int *points;
+   Client **clients;
+} Game;
 
 #endif /* guard */
-

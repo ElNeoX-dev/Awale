@@ -4,6 +4,8 @@
         "scrollbar.shadow": "#00000000"
     },
     "files.associations": {
-        "system_error": "c"
+        "system_error": "c",
+        "client2.h": "c",
+        "server2.h": "c"
     }
 }
