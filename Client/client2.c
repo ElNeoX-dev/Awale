@@ -39,7 +39,7 @@ static void app(const char *address, const char *name)
    /* send our name */
    write_server(sock, name);
 
-   int firstTime = 0 ;
+   int firstTime = 0;
 
    while (1)
    {
@@ -60,10 +60,13 @@ static void app(const char *address, const char *name)
       /* something from standard input : i.e keyboard */
       if (FD_ISSET(STDIN_FILENO, &rdfs))
       {
-         if (firstTime == 0) {
+         if (firstTime == 0)
+         {
             firstTime = 1;
             write_server(sock, registerMsg);
-         } else {
+         }
+         else
+         {
             fgets(buffer, BUF_SIZE - 1, stdin);
             {
                char *p = NULL;
@@ -80,7 +83,7 @@ static void app(const char *address, const char *name)
             }
             write_server(sock, buffer);
          }
-         //write_server(sock, registerMsg);
+         // write_server(sock, registerMsg);
       }
       else if (FD_ISSET(sock, &rdfs))
       {
@@ -93,7 +96,7 @@ static void app(const char *address, const char *name)
          }
          if (isRegistered == 0)
          {
-            if(sinscrire(buffer, name) == 0)
+            if (sinscrire(buffer, name) == 0)
             {
                exit(1);
             }

@@ -19,6 +19,7 @@ enum States
    REQUESTING,
    RESPONDING,
    DISCONNECTED,
+   NOTEXIST,
 };
 
 typedef struct Client

@@ -1,3 +1,0 @@
-break /home/hugow/Documents/INSA/Code/Awale/Serveur/server2.c:145
-break /home/hugow/Documents/INSA/Code/Awale/Serveur/server2.c:166
-
