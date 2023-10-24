@@ -459,11 +459,12 @@ int updateAuthorizedMove(Game *game, int j)
 
 int jouer(Game *game, int j, int caseChoisie, char *message)
 {
-    int i, coupJoue = -1;
+    printf("caseChoisie = %d\r\n", caseChoisie);
+    int i;
+    int coupJoue = caseChoisie;
     char textBuffer[1024];
-    caseChoisie = -1;
     int validMove = 0;
-    message = "";
+    // message = "";
     strcat(message, "************************************ \r\n");
     if (updateAuthorizedMove(game, j) == 1)
     {
@@ -484,25 +485,25 @@ int jouer(Game *game, int j, int caseChoisie, char *message)
     }
     // while (validMove != 1)
     // {
-    if (j == 0)
-    {
+    // if (j == 0)
+    // {
 
-        sprintf(textBuffer, "%s, choisissez une case non-vide (entre 0 et 5): ", game->clients[j]);
-        strcat(message, textBuffer);
-        // write_client(game->clients[j]->sock, "%s, choisissez une case non-vide (entre 0 et 5): ", game->clients[j]);
-        // scanf("%d", &caseChoisie);
-        // write_client(game->clients[j]->sock, "\r\n");
-        return -1;
-    }
-    else
-    {
-        sprintf(textBuffer, "%s, choisissez une case non-vide (entre 6 et 11): ", game->clients[j]);
-        strcat(message, textBuffer);
-        // write_client(game->clients[j]->sock, "%s, choisissez une case non-vide (entre 6 et 11): ", game->clients[j]);
-        // scanf("%d", &caseChoisie);
-        // write_client(game->clients[j]->sock, "\r\n");
-        return -1;
-    }
+    //     sprintf(textBuffer, "%s, choisissez une case non-vide (entre 0 et 5): ", game->clients[j]);
+    //     strcat(message, textBuffer);
+    //     // write_client(game->clients[j]->sock, "%s, choisissez une case non-vide (entre 0 et 5): ", game->clients[j]);
+    //     // scanf("%d", &caseChoisie);
+    //     // write_client(game->clients[j]->sock, "\r\n");
+    //     return -1;
+    // }
+    // else
+    // {
+    //     sprintf(textBuffer, "%s, choisissez une case non-vide (entre 6 et 11): ", game->clients[j]);
+    //     strcat(message, textBuffer);
+    //     // write_client(game->clients[j]->sock, "%s, choisissez une case non-vide (entre 6 et 11): ", game->clients[j]);
+    //     // scanf("%d", &caseChoisie);
+    //     // write_client(game->clients[j]->sock, "\r\n");
+    //     return -1;
+    // }
 
     if (caseChoisie < j * 6 + 6 && caseChoisie >= j * 6)
     {
@@ -583,7 +584,6 @@ int jouer(Game *game, int j, int caseChoisie, char *message)
         sprintf(textBuffer, "\033[1m%s prend les graines de la case %d\033[0m\r\n", game->clients[j]->name, caseChoisie);
         strcat(message, textBuffer);
         // write_client(game->clients[j]->sock, "\033[1m%s prend les graines de la case %d\033[0m\r\n", game->clients[j], caseChoisie);
-        coupJoue = caseChoisie;
         game->points[j] += game->plateau[caseChoisie];
         game->plateau[caseChoisie] = 0;
 

@@ -1,0 +1,9 @@
+A faire le mercredi 25/10/23
+
+- Pouvoir refuser un challenge
+- tester les conditions limites
+- isFinish qui marche
+- ^C sans que ca foute le bordel avec une prime un petit message pr le gagnant
+- tester les starvation (avec prise de graines et sans)
+
+-> Test complet de tout le jeu

@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
+#include <time.h>
 
 #include "server2.h"
 #include "awale.h"
@@ -137,6 +138,19 @@ static void app(void)
                /* client disconnected */
                if (c == 0)
                {
+                  /*
+                  if (client->state == WAITING || client->state == PLAYING_WAITING)
+                  {
+                     if (strcmp(client->name, client->game->clients[0]->name) == 0)
+                     {
+                        write_client(client->game->clients[1]->sock, VERT BOLD "Vous avez gagné par abandon de %s !🥳\r\n" RESET, client->name);
+                     }
+                     else
+                     {
+                        write_client(client->game->clients[0]->sock, VERT BOLD "Vous avez gagné par abandon de %s !🥳\r\n" RESET, client->name);
+                     }
+                  }
+                  */
                   client->state = DISCONNECTED;
                   write_client(client->sock, BLEU "Vous avez quitté le jeu\r\n" RESET);
                   closesocket(clientslocal[i].sock);
@@ -164,7 +178,7 @@ static void app(void)
                      {
                         printf("MENU ou LOBBY\n");
                         send_message_to_all_clients(clientslocal, *client, actual, message, 1);
-                        // write_client(client->sock, message);
+                        write_client(client->sock, message);
                      }
                      else
                      {
@@ -172,7 +186,7 @@ static void app(void)
                         write_to_players(client->game->clients, message);
                      }
                   }
-                  else if (client->state == MENU)
+                  else if (client->state == DISCONNECTED)
                   {
                      if (strstr(buffer, "inscription") != NULL)
                      {
@@ -184,7 +198,10 @@ static void app(void)
 
                         sinscrire(username, allUser, client);
                      }
-                     else if (strcmp(buffer, "afficher\0\n") == 0)
+                  }
+                  else if (client->state == MENU)
+                  {
+                     if (strcmp(buffer, "afficher\0\n") == 0)
                      {
                         printf("Il a ecrit afficher\n");
                         /*char *affichagePlateau = malloc(1024 * sizeof(char));
@@ -283,7 +300,7 @@ static void app(void)
                      }
                      else if (strlen(buffer) > 0)
                      {
-                        write_client(client->sock, "Commande incorrecte\r\n");
+                        write_client(client->sock, ROUGE BOLD "Commande incorrecte\r\n" RESET);
                      }
                   }
                   else if (client->state == REQUESTING)
@@ -308,6 +325,11 @@ static void app(void)
                               game.authorizedMove = malloc(12 * sizeof(int));
                               game.points = malloc(2 * sizeof(int));
                               game.clients = malloc(2 * sizeof(Client *));
+
+                              for (int k = 0; k < 12; k++)
+                              {
+                                 game.plateau[k] = 4;
+                              }
 
                               game.clients[0] = client; // 0 = celui qui request
                               game.clients[1] = allUser[j];
@@ -366,7 +388,7 @@ static void app(void)
                         free(affichagePlateau);
 
                         // tirer un nombre aleatoire entre 0 et 1 et defini qui commence
-                        if (rand() % 2)
+                        if (time(0) % 2)
                         {
                            client->id = 0;
                            client->state = PLAYING;
@@ -400,21 +422,26 @@ static void app(void)
                      int caseChoisie = atoi(buffer);
                      char *message = malloc(2048 * sizeof(char));
                      char *affichagePlateau = malloc(1024 * sizeof(char));
-                     if (jouer(client->game, client->id, caseChoisie, message) > 0)
+                     // if (isFinish())
+                     int retour = jouer(client->game, client->id, caseChoisie, message);
+                     printf("retour = %d\r\n", retour);
+                     if (retour > 0)
                      {
 
                         genererAffPlateau(client->game, affichagePlateau);
-                        write_client(client->game->clients[0]->sock, message);
-                        write_client(client->game->clients[0]->sock, affichagePlateau);
-                        write_client(client->game->clients[1]->sock, message);
-                        write_client(client->game->clients[1]->sock, affichagePlateau);
+                        write_to_players(client->game->clients, message);
+                        write_to_players(client->game->clients, affichagePlateau);
                         if (client->game->clients[0]->state == PLAYING_WAITING)
                         {
                            client->game->clients[0]->state = PLAYING;
+                           write_client(client->game->clients[0]->sock, "%s, choisissez une case non-vide (entre %d et %d): ", client->game->clients[0]->name, 6 * client->game->clients[0]->id, 6 * client->game->clients[0]->id + 5);
+                           write_client(client->game->clients[1]->sock, BOLD "C'est au tour de %s" RESET, client->game->clients[0]->name);
                         }
                         else
                         {
                            client->game->clients[1]->state = PLAYING;
+                           write_client(client->game->clients[1]->sock, "%s, choisissez une case non-vide (entre %d et %d): ", client->game->clients[1]->name, 6 * client->game->clients[1]->id, 6 * client->game->clients[1]->id + 5);
+                           write_client(client->game->clients[0]->sock, BOLD "C'est au tour de %s" RESET, client->game->clients[1]->name);
                         }
                         client->state = PLAYING_WAITING;
                      }
@@ -441,6 +468,10 @@ static void app(void)
                   }
                   else if (client->state == PLAYING_WAITING)
                   {
+                     if (strlen(buffer) > 0)
+                     {
+                        write_client(client->sock, ROUGE BOLD "Ce n'est pas votre tour\r\n" RESET);
+                     }
                   }
                   else if (client->state == WAITING_FOR_PLAY && strlen(buffer) > 0)
                   {
@@ -651,13 +682,6 @@ void sinscrire(char *username, Client **allUser, Client *client)
       {
          break;
       }
-      else if (allUser[j]->state != DISCONNECTED && strcmp(username, allUser[j]->name) == 0)
-      {
-         // joueur deja en ligne -> erreur faut un autre nom d'utilisateur
-         joueurNonInscrit = 0;
-         write_client(client->sock, "0\r\n");
-         break;
-      }
       else if (allUser[j]->state == DISCONNECTED && strcmp(username, allUser[j]->name) == 0)
       {
          // joueur deja inscrit -> Welcome back
@@ -666,6 +690,13 @@ void sinscrire(char *username, Client **allUser, Client *client)
          write_client(client->sock, "2\r\n");
          client->state = MENU;
 
+         break;
+      }
+      else if (allUser[j]->state != DISCONNECTED && strcmp(username, allUser[j]->name) == 0)
+      {
+         // joueur deja en ligne -> erreur faut un autre nom d'utilisateur
+         joueurNonInscrit = 0;
+         write_client(client->sock, "0\r\n");
          break;
       }
    }

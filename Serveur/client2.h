@@ -7,6 +7,7 @@ typedef int SOCKET;
 
 enum States
 {
+   DISCONNECTED,
    MENU,
    LOBBY,
    PLAYING,
@@ -18,8 +19,7 @@ enum States
    WAITING,
    REQUESTING,
    RESPONDING,
-   DISCONNECTED,
-   NOTEXIST,
+   NOTEXIST
 };
 
 typedef struct Client

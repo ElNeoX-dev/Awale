@@ -39,6 +39,8 @@ static void app(const char *address, const char *name)
    /* send our name */
    write_server(sock, name);
 
+   printf(BOLD BLEU "Bienvenue %s sur notre serveur de jeu Awale. Appuyez sur entrer pour continuer\r\n" RESET);
+
    int firstTime = 0;
 
    while (1)
