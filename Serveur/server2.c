@@ -128,27 +128,51 @@ static void app(void)
          int i = 0;
          for (i = 0; i < actual; i++)
          {
+            Client *client = &clientslocal[i];
             /* a client is talking */
             if (FD_ISSET(clientslocal[i].sock, &rdfs))
             {
-               Client *client = &clientslocal[i];
                int c = read_client(clientslocal[i].sock, buffer);
+
                /* client disconnected */
                if (c == 0)
                {
                   client->state = DISCONNECTED;
+                  write_client(client->sock, BLEU "Vous avez quitté le jeu\r\n" RESET);
                   closesocket(clientslocal[i].sock);
                   remove_client(clientslocal, i, &actual);
                   strncpy(buffer, client->name, BUF_SIZE - 1);
                   strncat(buffer, " disconnected !", BUF_SIZE - strlen(buffer) - 1);
-                  send_message_to_all_clients(clientslocal, *client, actual, buffer, 1);
+                  // send_message_to_all_clients(clientslocal, *client, actual, buffer, 1);
                }
                else
                {
-                  send_message_to_all_clients(clientslocal, *client, actual, buffer, 0);
-                  Client *client = &clientslocal[i];
+                  // send_message_to_all_clients(clientslocal, *client, actual, buffer, 0);
 
-                  if (client->state == MENU)
+                  // Chat : si le message contient "->"
+                  // Envoie a tous le monde si le client est dans le lobby ou dans le menu
+                  // Envoie a son adversaire si le client est en Game
+                  if (strstr(buffer, "->") != NULL)
+                  {
+                     printf("Il a ecrit CHAT\n");
+                     char *message = malloc(1024 * sizeof(char));
+                     char *msg = malloc(1024 * sizeof(char));
+                     msg = strtok(buffer, "->");
+                     sprintf(message, BLEU BOLD "%s : " RESET BLEU "%s\r\n" RESET, client->name, msg);
+
+                     if (client->state == MENU || client->state == LOBBY || client->state == WAITING)
+                     {
+                        printf("MENU ou LOBBY\n");
+                        send_message_to_all_clients(clientslocal, *client, actual, message, 1);
+                        // write_client(client->sock, message);
+                     }
+                     else
+                     {
+                        printf("EN GAME\n");
+                        write_to_players(client->game->clients, message);
+                     }
+                  }
+                  else if (client->state == MENU)
                   {
                      if (strstr(buffer, "inscription") != NULL)
                      {
@@ -205,12 +229,12 @@ static void app(void)
                         printf("Il a ecrit QUITTER\n");
 
                         client->state = DISCONNECTED;
-                        write_client(clientslocal[i].sock, BLEU BOLD "Vous avez quitté la partie.\r\n" RESET);
+                        write_client(client->sock, BLEU "Vous avez quitté le jeu\r\n" RESET);
                         closesocket(clientslocal[i].sock);
                         remove_client(clientslocal, i, &actual);
                         strncpy(buffer, client->name, BUF_SIZE - 1);
                         strncat(buffer, " disconnected !", BUF_SIZE - strlen(buffer) - 1);
-                        send_message_to_all_clients(clientslocal, *client, actual, buffer, 1);
+                        // send_message_to_all_clients(clientslocal, *client, actual, buffer, 1);
                      }
                      else if (strcmp(buffer, "help\0\n") == 0)
                      {
@@ -274,6 +298,9 @@ static void app(void)
                         {
                            if (allUser[j] != NULL && strcmp(allUser[j]->name, buffer) == 0)
                            {
+
+                              write_client(client->sock, VIOLET BOLD "En attente de la réponse de %s...\r\n" RESET, buffer);
+                              // printf("Je suis : %s->%d et je défie : %s->%d\r\n", client->name, client->state, allUser[j]->name, allUser[j]->state);
                               allUser[j]->state = CHALLENGED;
                               client->state = WAITING_RESPONSE;
 
@@ -291,6 +318,7 @@ static void app(void)
                               allUser[j]->game = &game;
 
                               playerFound = 1;
+                              write_client(allUser[j]->sock, "%s vous a défié\r\n0: Accepter\r\n1: Refuser\r\n", client->name);
                               break;
                            }
                         }
@@ -320,39 +348,49 @@ static void app(void)
                         write_client(client->sock, BOLD "\nEntrez une commande ou faites \"help\" pour accéder à la liste des commandes disponibles : " RESET);
                      }
                   }
-                  else if (client->state == CHALLENGED)
+                  /*else if (client->state == CHALLENGED)
                   {
                      client->state = RESPONDING;
-                     write_client(client->sock, "**Machin** vous a défié\r\n0: Accepter\r\n1: Refuser\r\n");
-                  }
+                     write_client(client->sock, "%s vous a défié\r\n0: Accepter\r\n1: Refuser\r\n", client->game->clients[0]->name);
+                  }*/
                   else if (client->state == WAITING_RESPONSE)
                   {
                   }
-                  else if (client->state == RESPONDING)
+                  else if (client->state == CHALLENGED)
                   {
                      if (strcmp(buffer, "0\0\n") == 0)
                      {
-                        /*
-                        Game game;
-                        game.plateau = malloc(12 * sizeof(int));
-                        game.authorizedMove = malloc(12 * sizeof(int));
-                        game.points = malloc(2 * sizeof(int));
-                        game.clients = malloc(2 * sizeof(Client *));
-                        */
 
-                        // tirer un nombre aleatoire entre 0 et 1 et defini s'il est le joueur 0 ou 1
+                        char *affichagePlateau = malloc(1024 * sizeof(char));
+                        // affichage du plateau
+                        genererAffPlateau(client->game, affichagePlateau);
+                        write_to_players(client->game->clients, affichagePlateau);
+                        free(affichagePlateau);
+
+                        // tirer un nombre aleatoire entre 0 et 1 et defini qui commence
                         if (rand() % 2)
                         {
                            client->id = 0;
+                           client->state = PLAYING;
                            client->game->clients[0]->id = 1;
+                           client->game->clients[0]->state = WAITING_FOR_PLAY;
+                           write_client(client->sock, "Le Hasard a décidé que vous commenciez\r\n");
+                           write_client(client->sock, "%s, choisissez une case non-vide (entre 0 et 5): ", client->name);
+
+                           write_client(client->game->clients[0]->sock, "Le Hasard a décidé que %s commencait\r\n", client->name);
                         }
                         else
                         {
                            client->id = 1;
+                           client->state = WAITING_FOR_PLAY;
                            client->game->clients[0]->id = 0;
-                        }
+                           client->game->clients[0]->state = PLAYING;
 
-                        client->state = PLAYING;
+                           write_client(client->game->clients[0]->sock, "Le Hasard a décidé que vous commenciez\r\n");
+                           write_client(client->game->clients[0]->sock, "%s, choisissez une case non-vide (entre 0 et 5): ", client->game->clients[0]->name);
+
+                           write_client(client->sock, "Le Hasard a décidé que %s commencait\r\n", client->game->clients[0]->name);
+                        }
                      }
                      else if (strcmp(buffer, "1\0\n") == 0)
                      {
@@ -361,11 +399,13 @@ static void app(void)
                   }
                   else if (client->state == PLAYING)
                   {
-                     char *affichagePlateau = malloc(1024 * sizeof(char));
-                     // affichage du plateau
-                     genererAffPlateau(client->game, affichagePlateau);
-                     write_to_players(client->game->clients, affichagePlateau);
-                     jouer(client->game, client->id);
+                     char *message;
+                     if (jouer(client->game, client->id, 0, message) > 0)
+                     {
+                     }
+                     else
+                     {
+                     }
 
                      /*                      // boucle de jeu
                                           while (isFinish(client.game) == 0)
@@ -378,7 +418,8 @@ static void app(void)
                                              // joueur 2
                                              jouer(client.game, 1);
                                              afficherPlateau(client.game, affichagePlateau);
-                                          } */
+                                          }
+                        */
                   }
                   else if (client->state == PLAYING_WAITING)
                   {
@@ -548,6 +589,29 @@ static void write_to_players(Client **clients, const char *message, ...)
    va_end(args);
 }
 
+static void write_to_all_players(Client **clients, const char *message, ...)
+{
+   va_list args;
+   va_start(args, message);
+
+   // Créez un tampon pour formater le message
+   char buffer[1024]; // Vous pouvez ajuster la taille du tampon en fonction de vos besoins
+
+   // Formatez le message en utilisant vsnprintf
+   vsnprintf(buffer, sizeof(buffer), message, args);
+
+   int i = 0;
+   // a changer en fonction du nombre d'observateurs
+   for (i = 0; i < NBMAXJOUEUR; i++)
+   {
+      if (clients[i] != NULL)
+      {
+         write_client(clients[i]->sock, buffer);
+      }
+   }
+   va_end(args);
+}
+
 int main(int argc, char **argv)
 {
    init();
@@ -569,19 +633,19 @@ void sinscrire(char *username, Client **allUser, Client *client)
       {
          break;
       }
-      else if (allUser[j]->state != DISCONNECTED && strcmp(allUser[j]->name, username) == 0)
+      else if (allUser[j]->state != DISCONNECTED && strcmp(username, allUser[j]->name) == 0)
       {
          // joueur deja en ligne -> erreur faut un autre nom d'utilisateur
          joueurNonInscrit = 0;
-         write_client(client->sock, "0");
+         write_client(client->sock, "0\r\n");
          break;
       }
-      else if (allUser[j]->state == DISCONNECTED && strcmp(allUser[j]->name, username) == 0)
+      else if (allUser[j]->state == DISCONNECTED && strcmp(username, allUser[j]->name) == 0)
       {
          // joueur deja inscrit -> Welcome back
          strcpy(client->name, username);
          joueurNonInscrit = 0;
-         write_client(client->sock, "2");
+         write_client(client->sock, "2\r\n");
          client->state = MENU;
 
          break;
@@ -603,7 +667,7 @@ void sinscrire(char *username, Client **allUser, Client *client)
          }
       }
       strcpy(client->name, username);
-      write_client(client->sock, "1");
+      write_client(client->sock, "1\r\n");
    }
 }
 

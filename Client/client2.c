@@ -81,9 +81,9 @@ static void app(const char *address, const char *name)
                   buffer[BUF_SIZE - 1] = 0;
                }
             }
+            // printf("--%s--\r\n", buffer);
             write_server(sock, buffer);
          }
-         // write_server(sock, registerMsg);
       }
       else if (FD_ISSET(sock, &rdfs))
       {
@@ -167,18 +167,18 @@ static int read_server(SOCKET sock, char *buffer)
    return n;
 }
 
-int sinscrire(int *received_data, char *username)
+int sinscrire(char *received_data, const char *username)
 {
    // regarde la valeur de retour
    // si retour == 1, ok = 1 -> utilisateur crée
    // si retour == 2, welcome back -> utilisateur déjà crée
    // si retour == 0, erreur -> utilisateur déjà connecté
-   if (strcmp(received_data, "1") == 0)
+   if (strcmp(received_data, "1\r\n") == 0)
    {
       printf("Bienvenue %s, nous venons de creer votre utilisateur\r\n", username);
       return 1;
    }
-   else if (strcmp(received_data, "2") == 0)
+   else if (strcmp(received_data, "2\r\n") == 0)
    {
       printf("Welcome back %s\r\n", username);
       return 1;

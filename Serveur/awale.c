@@ -457,58 +457,69 @@ int updateAuthorizedMove(Game *game, int j)
     return 0;
 }
 
-void jouer(Game *game, int j)
+int jouer(Game *game, int j, int caseChoisie, char *message)
 {
-    int i;
-    int caseChoisie = -1;
+    int i, coupJoue = -1;
+    char textBuffer[1024];
+    caseChoisie = -1;
     int validMove = 0;
-    printf("************************************ \r\n");
+    message = "";
+    strcat(message, "************************************ \r\n");
     if (updateAuthorizedMove(game, j) == 1)
     {
-        write_client(game->clients[j]->sock, "\e[0;31m\033[1mStarvation !\033[0m\r\n");
-        write_client(game->clients[j]->sock, "\e[0;32m\033[1mCases possibles : ");
+        strcat(message, "\e[0;31m\033[1mStarvation !\033[0m\r\n");
+        strcat(message, "\e[0;32m\033[1mCases possibles : ");
+        // write_client(game->clients[j]->sock, "\e[0;31m\033[1mStarvation !\033[0m\r\n");
+        // write_client(game->clients[j]->sock, "\e[0;32m\033[1mCases possibles : ");
         for (i = 0; i < 6; i++)
         {
             if (game->authorizedMove[i] == 1)
             {
-                write_client(game->clients[j]->sock, "%d ", i + j * 6);
+                sprintf(textBuffer, "%d ", i + j * 6);
+                strcat(message, textBuffer);
             }
         }
-        write_client(game->clients[j]->sock, "\033[0m\r\n");
+        strcat(message, "\033[0m\r\n");
+        // write_client(game->clients[j]->sock, "\033[0m\r\n");
     }
-    while (validMove != 1)
+    // while (validMove != 1)
+    // {
+    if (j == 0)
     {
-        if (j == 0)
-        {
-            write_client(game->clients[j]->sock, "%s, choisissez une case non-vide (entre 0 et 5): ", game->clients[j]);
-            scanf("%d", &caseChoisie);
-            write_client(game->clients[j]->sock, "\r\n");
-        }
-        else
-        {
-            write_client(game->clients[j]->sock, "%s, choisissez une case non-vide (entre 6 et 11): ", game->clients[j]);
-            scanf("%d", &caseChoisie);
-            write_client(game->clients[j]->sock, "\r\n");
-        }
 
-        if (caseChoisie < j * 6 + 6 && caseChoisie >= j * 6)
+        sprintf(textBuffer, "%s, choisissez une case non-vide (entre 0 et 5): ", game->clients[j]);
+        strcat(message, textBuffer);
+        // write_client(game->clients[j]->sock, "%s, choisissez une case non-vide (entre 0 et 5): ", game->clients[j]);
+        // scanf("%d", &caseChoisie);
+        // write_client(game->clients[j]->sock, "\r\n");
+        return -1;
+    }
+    else
+    {
+        sprintf(textBuffer, "%s, choisissez une case non-vide (entre 6 et 11): ", game->clients[j]);
+        strcat(message, textBuffer);
+        // write_client(game->clients[j]->sock, "%s, choisissez une case non-vide (entre 6 et 11): ", game->clients[j]);
+        // scanf("%d", &caseChoisie);
+        // write_client(game->clients[j]->sock, "\r\n");
+        return -1;
+    }
+
+    if (caseChoisie < j * 6 + 6 && caseChoisie >= j * 6)
+    {
+        if (game->authorizedMove[caseChoisie - j * 6] == 0)
         {
-            if (game->authorizedMove[caseChoisie - j * 6] == 0)
-            {
-                write_client(game->clients[j]->sock, "\e[0;31m\033[1m/!\\ Choix non valide !\033[0m\r\n");
-                validMove = 0;
-            }
-            else
-            {
-                validMove = 1;
-            }
-        }
-        else
-        {
-            write_client(game->clients[j]->sock, "\e[0;31m\033[1m/!\\ Choix non valide !\033[0m\r\n");
-            validMove = 0;
+            strcat(message, "\e[0;31m\033[1m/!\\ Choix non valide !\033[0m\r\n");
+            // write_client(game->clients[j]->sock, "\e[0;31m\033[1m/!\\ Choix non valide !\033[0m\r\n");
+            return -2;
         }
     }
+    else
+    {
+        strcat(message, "\e[0;31m\033[1m/!\\ Choix non valide !\033[0m\r\n");
+        // write_client(game->clients[j]->sock, "\e[0;31m\033[1m/!\\ Choix non valide !\033[0m\r\n");
+        return -2;
+    }
+    // }
 
     int graines = game->plateau[caseChoisie];
     game->plateau[caseChoisie] = 0;
@@ -569,7 +580,10 @@ void jouer(Game *game, int j)
     // tant que la case d'arrivée est adverse et 1 < nbGraine < 4, on prend les graines
     while (isTerrainAdverse(j, caseChoisie) && game->plateau[caseChoisie] > 1 && game->plateau[caseChoisie] < 4)
     {
-        write_client(game->clients[j]->sock, "\033[1m%s prend les graines de la case %d\033[0m\r\n", game->clients[j], caseChoisie);
+        sprintf(textBuffer, "\033[1m%s prend les graines de la case %d\033[0m\r\n", game->clients[j]->name, caseChoisie);
+        strcat(message, textBuffer);
+        // write_client(game->clients[j]->sock, "\033[1m%s prend les graines de la case %d\033[0m\r\n", game->clients[j], caseChoisie);
+        coupJoue = caseChoisie;
         game->points[j] += game->plateau[caseChoisie];
         game->plateau[caseChoisie] = 0;
 
@@ -586,13 +600,17 @@ void jouer(Game *game, int j)
     // si la prise de graine précedente entraine une stravation, on restore le plateau et les points comme il était avant
     if (checkStarvation(game, j))
     {
-        write_client(game->clients[j]->sock, "\033[1m%s a affamé son adversaire ! Il ne prend donc pas les graines...\033[0m\r\n", game->clients[j]);
+        sprintf(textBuffer, "\033[1m%s a affamé son adversaire ! Il ne prend donc pas les graines...\033[0m\r\n", game->clients[j]->name);
+        strcat(message, textBuffer);
+        // write_client(game->clients[j]->sock, "\033[1m%s a affamé son adversaire ! Il ne prend donc pas les graines...\033[0m\r\n", game->clients[j]);
         for (int i = 0; i < 12; i++)
         {
             game->plateau[i] = plateauSave[i];
         }
         game->points[j] = pointsSave;
+        return -3;
     }
+    return coupJoue;
 }
 
 int checkStarvation(Game *game, int j)

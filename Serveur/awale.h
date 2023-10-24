@@ -23,7 +23,7 @@ typedef struct sockaddr SOCKADDR;
 typedef struct in_addr IN_ADDR;
 
 void genererAffPlateau(Game *game, char *affichagePlateau);
-void jouer(Game *game, int j);
+int jouer(Game *game, int j, int caseChoisie, char *message);
 int isTerrainAdverse(int j, int CaseChoisie);
 int updateAuthorizedMove(Game *game, int j);
 int checkStarvation(Game *game, int j);
