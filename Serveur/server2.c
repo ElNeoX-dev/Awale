@@ -241,9 +241,7 @@ static void app(void)
                         printf("Il a ecrit HELP\n");
 
                         char help[] = {VERT BOLD "Voici la liste des commandes utilisables :\r\n" RESET
-                                           VERT "  - afficher : affiche le plateau de jeu\r\n"
-                                                 "  - action : permet de jouer un coup\r\n"
-                                                 "  - help : affiche la liste des commandes utilisables\r\n"
+                                           VERT "  - help : affiche la liste des commandes utilisables\r\n"
                                                  "  - quitter : permet de quitter le jeu\r\n" RESET};
 
                         write_client(client->sock, "%s", help);
@@ -399,13 +397,33 @@ static void app(void)
                   }
                   else if (client->state == PLAYING)
                   {
-                     char *message;
-                     if (jouer(client->game, client->id, 0, message) > 0)
+                     int caseChoisie = atoi(buffer);
+                     char *message = malloc(2048 * sizeof(char));
+                     char *affichagePlateau = malloc(1024 * sizeof(char));
+                     if (jouer(client->game, client->id, caseChoisie, message) > 0)
                      {
+
+                        genererAffPlateau(client->game, affichagePlateau);
+                        write_client(client->game->clients[0]->sock, message);
+                        write_client(client->game->clients[0]->sock, affichagePlateau);
+                        write_client(client->game->clients[1]->sock, message);
+                        write_client(client->game->clients[1]->sock, affichagePlateau);
+                        if (client->game->clients[0]->state == PLAYING_WAITING)
+                        {
+                           client->game->clients[0]->state = PLAYING;
+                        }
+                        else
+                        {
+                           client->game->clients[1]->state = PLAYING;
+                        }
+                        client->state = PLAYING_WAITING;
                      }
                      else
                      {
+                        write_client(client->sock, message);
                      }
+                     free(message);
+                     free(affichagePlateau);
 
                      /*                      // boucle de jeu
                                           while (isFinish(client.game) == 0)
