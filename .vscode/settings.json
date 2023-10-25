@@ -1,14 +1,15 @@
 {
-    "workbench.colorCustomizations": {
-        "minimap.background": "#00000000",
-        "scrollbar.shadow": "#00000000"
-    },
-    "files.associations": {
-        "system_error": "c",
-        "client2.h": "c",
-        "server2.h": "c",
-        "chrono": "c",
-        "typeindex": "c",
-        "typeinfo": "c"
-    }
+  "workbench.colorCustomizations": {
+    "minimap.background": "#00000000",
+    "scrollbar.shadow": "#00000000"
+  },
+  "files.associations": {
+    "system_error": "c",
+    "client2.h": "c",
+    "server2.h": "c",
+    "chrono": "c",
+    "typeindex": "c",
+    "typeinfo": "c",
+    "cstdlib": "c"
+  }
 }

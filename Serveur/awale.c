@@ -395,10 +395,10 @@ int isTerrainAdverse(int j, int caseChoisie)
 }
 */
 
-int isFinish(Game *game)
+int isFinish(Game *game, char *message)
 {
     int i, sumJ1 = 0, sumJ2 = 0;
-
+    char buffer[1024];
     // Calculate the sum of seeds for each player
     for (i = 0; i < 6; i++)
     {
@@ -427,15 +427,18 @@ int isFinish(Game *game)
         // Determine the winner
         if (game->points[0] > game->points[1])
         {
-            write_to_players(game->clients, "%s wins!\n", game->clients[0]->name);
+            sprintf(buffer, VERT BOLD "%s wins!\r\n" RESET, game->clients[0]->name);
+            strcat(message, buffer);
         }
         else if (game->points[1] > game->points[0])
         {
-            write_to_players(game->clients, "%s wins!\n", game->clients[1]->name);
+            sprintf(buffer, VERT BOLD "%s wins!\r\n" RESET, game->clients[1]->name);
+            strcat(message, buffer);
         }
         else
         {
-            write_to_players(game->clients, "It's a tie!\n");
+            sprintf(buffer, VERT BOLD "It's a tie!\n" RESET);
+            strcat(message, buffer);
         }
 
         return 1;

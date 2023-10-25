@@ -53,7 +53,7 @@ static void send_message_to_all_clients(Client *clients, Client client, int actu
 static void remove_client(Client *clients, int to_remove, int *actual);
 static void clear_clients(Client *clients, int actual);
 
-void sinscrire(char *username, Client **allUser, Client *client);
+int sinscrire(char *username, Client **allUser, Client *client);
 void listerJoueurState(Client **allUser, char *listePseudo, enum States state, Client *client);
 void listerJoueurNotState(Client **allUser, char *listePseudo, enum States state, Client *client);
 
