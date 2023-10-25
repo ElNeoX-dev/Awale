@@ -155,14 +155,13 @@ static void app(void)
                         free(client->game->authorizedMove);
                         free(client->game->points);
                         free(client->game);
-                        write_client(client->sock, BOLD "\nEntrez une commande ou faites \"help\" pour accéder à la liste des commandes disponibles : " RESET);
+                        write_client(client->game->clients[1]->sock, BOLD "\nEntrez une commande ou faites \"help\" pour accéder à la liste des commandes disponibles : " RESET);
                      }
                      else
                      {
                         write_client(client->game->clients[0]->sock, VERT BOLD "Vous avez gagné par abandon de %s !🥳\r\n" RESET, client->name);
                         client->game->clients[0]->state = MENU;
-                        write_client(client->game->clients[1]->sock, VERT BOLD "Vous avez gagné par abandon de %s !🥳\r\n" RESET, client->name);
-                        write_client(client->sock, BOLD "\nEntrez une commande ou faites \"help\" pour accéder à la liste des commandes disponibles : " RESET);
+                        write_client(client->game->clients[0]->sock, BOLD "\nEntrez une commande ou faites \"help\" pour accéder à la liste des commandes disponibles : " RESET);
                      }
                   }
 
@@ -192,7 +191,7 @@ static void app(void)
                      {
                         printf("MENU ou LOBBY\n");
                         send_message_to_all_clients(clientslocal, *client, actual, message, 1);
-                        write_client(client->sock, message);
+                        // write_client(client->sock, message);
                      }
                      else
                      {
@@ -211,31 +210,23 @@ static void app(void)
                         username = strtok(NULL, ":");
                         username = strtok(username, "\r\n");
                         printf("username = %s\r\n", username);
+                        sinscrire(username, allUsers, client);
 
-                        if (sinscrire(username, allUsers, client) != 0)
+                        write_client(client->sock, "%s", help);
+                        /*if (sinscrire(username, allUsers, client) != 0)
                         {
                            write_client(client->sock, "%s", help);
-                        }
+                        }*/
                      }
                   }
                   else if (client->state == MENU)
                   {
-                     /*if (strcmp(buffer, "afficher\0\n") == 0)
+                     if (strcmp(buffer, "help\0\n") == 0)
                      {
-                        printf("Il a ecrit afficher\n");
-                        /*char *affichagePlateau = malloc(1024 * sizeof(char));
-                        genererAffPlateau(plateau, joueur, points, clients[i].sock, affichagePlateau);
-                        write_client(clients[i].sock, affichagePlateau);
-                        free(affichagePlateau);*
+                        printf("Il a ecrit HELP\n");
+                        write_client(client->sock, "%s", help);
                      }
-                     else if (strcmp(buffer, "action\0\n") == 0)
-                     {
-                        printf("Il a ecrit ACTION\n");
-
-                        write_client(client->sock, ROUGE BOLD "/!\\ Choix non valide !\r\n" RESET);
-                     }
-                     else */
-                     if (strcmp(buffer, "0\0\n") == 0)
+                     else if (strcmp(buffer, "0\0\n") == 0)
                      {
                         printf("Il a ecrit JOUER\n");
                         client->state = LOBBY;
@@ -273,14 +264,9 @@ static void app(void)
                         strncat(buffer, " disconnected !", BUF_SIZE - strlen(buffer) - 1);
                         // send_message_to_all_clients(clientslocal, *client, actual, buffer, 1);
                      }
-                     else if (strcmp(buffer, "help\0\n") == 0)
-                     {
-                        printf("Il a ecrit HELP\n");
-                        write_client(client->sock, "%s", help);
-                     }
                      else
                      {
-                        write_client(client->sock, VIOLET BOLD "State : %s\r\n" RESET, client->state);
+                        // write_client(client->sock, VIOLET BOLD "State : %s\r\n" RESET, client->state);
                         write_client(client->sock, ROUGE BOLD "Commande non reconnue : %s" RESET "\nVeullez réessayer.\r\n", buffer);
                      }
                   }
@@ -295,6 +281,7 @@ static void app(void)
                         write_client(client->sock, listePseudoOnline);
                         write_client(client->sock, BOLD "Veuillez entrer le pseudo du joueur que vous voulez defier : \r\n" RESET);
                         free(listePseudoOnline);
+                        sd
                      }
                      else if (strcmp(buffer, "1\0\n") == 0)
                      {
@@ -341,7 +328,7 @@ static void app(void)
                               game->points = malloc(2 * sizeof(int));
                               game->clients = malloc(2 * sizeof(Client *));
 
-                              for (int k = 0; k < 6; k++)
+                              for (int k = 0; k < 12; k++)
                               {
                                  game->plateau[k] = 4;
                               }
@@ -412,7 +399,7 @@ static void app(void)
                            write_client(client->sock, "Le Hasard a décidé que vous commenciez\r\n");
                            write_client(client->sock, "%s, choisissez une case non-vide (entre 0 et 5): ", client->name);
 
-                           write_client(client->game->clients[0]->sock, "Le Hasard a décidé que %s commencait\r\n", client->name);
+                           write_client(client->game->clients[0]->sock, free "Le Hasard a décidé que %s commencait\r\n", client->name);
                         }
                         else
                         {
@@ -447,12 +434,16 @@ static void app(void)
                         client->game->clients[0]->state = MENU;
                         client->game->clients[1]->state = MENU;
                         write_to_players(client->game->clients, BOLD "\nEntrez une commande ou faites \"help\" pour accéder à la liste des commandes disponibles : " RESET);
+                        free(client->game->plateau);
+                        free(client->game->authorizedMove);
+                        free(client->game->points);
+                        free(client->game);
                      }
                      else
                      {
                         int retour = jouer(client->game, client->id, caseChoisie, message);
                         printf("retour = %d\r\n", retour);
-                        if (retour > 0)
+                        if (retour >= 0)
                         {
 
                            genererAffPlateau(client->game, affichagePlateau);
@@ -533,24 +524,13 @@ static void remove_client(Client *clients, int to_remove, int *actual)
    (*actual)--;
 }
 
-static void send_message_to_all_clients(Client *clients, Client sender, int actual, const char *buffer, char from_server)
+static void send_message_to_all_clients(Client *clients, Client sender, int actual, const char *message, char from_server)
 {
    int i = 0;
-   char message[BUF_SIZE];
-   message[0] = 0;
    for (i = 0; i < actual; i++)
    {
       /* we don't send message to the sender */
-      if (sender.sock != clients[i].sock)
-      {
-         if (from_server == 0)
-         {
-            strncpy(message, sender.name, BUF_SIZE - 1);
-            strncat(message, " : ", sizeof message - strlen(message) - 1);
-         }
-         strncat(message, buffer, sizeof message - strlen(message) - 1);
-         write_client(clients[i].sock, message);
-      }
+      write_client(clients[i].sock, message);
    }
 }
 
@@ -701,7 +681,7 @@ int main(int argc, char **argv)
    return EXIT_SUCCESS;
 }
 
-int sinscrire(char *username, Client **allUsers, Client *client)
+void sinscrire(char *username, Client **allUsers, Client *client)
 {
    int joueurNonInscrit = 1; // 0 = inscrit ; 1 = non inscrit
    for (int j = 0; j < NBMAXJOUEUR; j++)
@@ -719,7 +699,8 @@ int sinscrire(char *username, Client **allUsers, Client *client)
          write_client(client->sock, "2\r\n");
          client->state = MENU;
 
-         return 2;
+         break;
+         // return 2;
       }
       else if (allUsers[j]->state != DISCONNECTED && strcmp(username, allUsers[j]->name) == 0)
       {
@@ -727,7 +708,8 @@ int sinscrire(char *username, Client **allUsers, Client *client)
          joueurNonInscrit = 0;
          write_client(client->sock, "0\r\n");
 
-         return 0;
+         break;
+         // return 0;
       }
    }
 
@@ -749,7 +731,7 @@ int sinscrire(char *username, Client **allUsers, Client *client)
       write_client(client->sock, "1\r\n");
    }
 
-   return 1;
+   // return 1;
 }
 
 void listerJoueurState(Client **allUsers, char *listePseudo, enum States state, Client *client)
