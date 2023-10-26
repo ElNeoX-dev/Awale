@@ -50,11 +50,10 @@ static void write_client(SOCKET sock, const char *buffer, ...);
 static void write_to_players(Client **clients, const char *message, ...);
 static void write_to_all_players(Client **clients, const char *message, ...);
 static void send_message_to_all_clients(Client *clients, Client client, int actual, const char *buffer, char from_server);
-static void remove_client(Client *clients, int to_remove, int *actual);
-static void clear_clients(Client *clients, int actual);
+static void clear_clients(Client *clients);
 
-void sinscrire(char *username, Client **allUser, Client *client);
-void listerJoueurState(Client **allUser, char *listePseudo, enum States state, Client *client);
-void listerJoueurNotState(Client **allUser, char *listePseudo, enum States state, Client *client);
+void sinscrire(char *username, Client *allUser, Client *client);
+void listerJoueurState(Client *allUser, char *listePseudo, enum States state, Client *client);
+void listerJoueurNotState(Client *allUser, char *listePseudo, enum States state, Client *client);
 
 #endif /* guard */

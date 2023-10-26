@@ -47,6 +47,6 @@ static void end_connection(int sock);
 static int read_server(SOCKET sock, char *buffer);
 static void write_server(SOCKET sock, const char *buffer);
 
-int sinscrire(char *received_data, const char *username);
+int sinscrire(char *received_data, const char *username, SOCKET sock);
 
 #endif /* guard */

@@ -39,7 +39,7 @@ static void app(const char *address, const char *name)
    /* send our name */
    write_server(sock, name);
 
-   printf(BOLD BLEU "Bienvenue %s sur notre serveur de jeu Awale. Appuyez sur entrer pour continuer\r\n" RESET);
+   // printf(BOLD BLEU "Bienvenue %s sur notre serveur de jeu Awale. Appuyez sur entrer pour continuer\r\n" RESET);
 
    int firstTime = 0;
 
@@ -62,30 +62,22 @@ static void app(const char *address, const char *name)
       /* something from standard input : i.e keyboard */
       if (FD_ISSET(STDIN_FILENO, &rdfs))
       {
-         if (firstTime == 0)
+         fgets(buffer, BUF_SIZE - 1, stdin);
          {
-            firstTime = 1;
-            write_server(sock, registerMsg);
-         }
-         else
-         {
-            fgets(buffer, BUF_SIZE - 1, stdin);
+            char *p = NULL;
+            p = strstr(buffer, "\n");
+            if (p != NULL)
             {
-               char *p = NULL;
-               p = strstr(buffer, "\n");
-               if (p != NULL)
-               {
-                  *p = 0;
-               }
-               else
-               {
-                  /* fclean */
-                  buffer[BUF_SIZE - 1] = 0;
-               }
+               *p = 0;
             }
-            // printf("--%s--\r\n", buffer);
-            write_server(sock, buffer);
+            else
+            {
+               /* fclean */
+               buffer[BUF_SIZE - 1] = 0;
+            }
          }
+         // printf("--%s--\r\n", buffer);
+         write_server(sock, buffer);
       }
       else if (FD_ISSET(sock, &rdfs))
       {
@@ -98,8 +90,10 @@ static void app(const char *address, const char *name)
          }
          if (isRegistered == 0)
          {
-            if (sinscrire(buffer, name) == 0)
+            int retour = sinscrire(buffer, name, sock);
+            if (retour == 0)
             {
+               printf("s'inscrire : %d", retour);
                exit(1);
             }
             else
@@ -169,24 +163,27 @@ static int read_server(SOCKET sock, char *buffer)
    return n;
 }
 
-int sinscrire(char *received_data, const char *username)
+int sinscrire(char *received_data, const char *username, SOCKET sock)
 {
    // regarde la valeur de retour
    // si retour == 1, ok = 1 -> utilisateur crée
    // si retour == 2, welcome back -> utilisateur déjà crée
    // si retour == 0, erreur -> utilisateur déjà connecté
-   if (strcmp(received_data, "1\r\n") == 0)
+   if (strstr(received_data, "Inscription") != NULL)
    {
       printf("Bienvenue %s, nous venons de creer votre utilisateur\r\n", username);
+      write_server(sock, "OK");
       return 1;
    }
-   else if (strcmp(received_data, "2\r\n") == 0)
+   else if (strstr(received_data, "WelcomeBack") != NULL)
    {
       printf("Welcome back %s\r\n", username);
+      write_server(sock, "OK");
       return 1;
    }
    else
    {
+      printf("%s", received_data);
       printf("Cet utilisateur est déjà connecté\r\n");
       return 0;
    }

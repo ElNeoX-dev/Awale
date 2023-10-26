@@ -7,7 +7,9 @@ typedef int SOCKET;
 
 enum States
 {
+   NOTEXIST,
    DISCONNECTED,
+   REGISTERING,
    MENU,
    LOBBY,
    PLAYING,
@@ -18,8 +20,7 @@ enum States
    WAITING_RESPONSE,
    WAITING,
    REQUESTING,
-   RESPONDING,
-   NOTEXIST
+   RESPONDING
 };
 
 typedef struct Client
@@ -33,10 +34,10 @@ typedef struct Client
 
 typedef struct Game
 {
-   int *plateau;
-   int *authorizedMove;
-   int *points;
-   Client **clients;
+   int plateau[12];
+   int authorizedMove[12];
+   int points[2];
+   Client *clients[2];
 } Game;
 
 #endif /* guard */
