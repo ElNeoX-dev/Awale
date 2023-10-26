@@ -472,18 +472,6 @@ int jouer(Game *game, int j, int caseChoisie, char *message)
     if (updateAuthorizedMove(game, j) == 1)
     {
         strcat(message, "\e[0;31m\033[1mStarvation !\033[0m\r\n");
-        strcat(message, "\e[0;32m\033[1mCases possibles : ");
-        // write_client(game->clients[j]->sock, "\e[0;31m\033[1mStarvation !\033[0m\r\n");
-        // write_client(game->clients[j]->sock, "\e[0;32m\033[1mCases possibles : ");
-        for (i = 0; i < 6; i++)
-        {
-            if (game->authorizedMove[i] == 1)
-            {
-                sprintf(textBuffer, "%d ", i + j * 6);
-                strcat(message, textBuffer);
-            }
-        }
-        strcat(message, "\033[0m\r\n");
         // write_client(game->clients[j]->sock, "\033[0m\r\n");
     }
     // while (validMove != 1)
@@ -513,6 +501,18 @@ int jouer(Game *game, int j, int caseChoisie, char *message)
         if (game->authorizedMove[caseChoisie - j * 6] == 0)
         {
             strcat(message, "\e[0;31m\033[1m/!\\ Choix non valide !\033[0m\r\n");
+            strcat(message, "\e[0;32m\033[1mCases possibles : ");
+            // write_client(game->clients[j]->sock, "\e[0;31m\033[1mStarvation !\033[0m\r\n");
+            // write_client(game->clients[j]->sock, "\e[0;32m\033[1mCases possibles : ");
+            for (i = 0; i < 6; i++)
+            {
+                if (game->authorizedMove[i] == 1)
+                {
+                    sprintf(textBuffer, "%d ", i + j * 6);
+                    strcat(message, textBuffer);
+                }
+            }
+            strcat(message, "\033[0m\r\n");
             // write_client(game->clients[j]->sock, "\e[0;31m\033[1m/!\\ Choix non valide !\033[0m\r\n");
             return -2;
         }
@@ -520,6 +520,18 @@ int jouer(Game *game, int j, int caseChoisie, char *message)
     else
     {
         strcat(message, "\e[0;31m\033[1m/!\\ Choix non valide !\033[0m\r\n");
+        strcat(message, "\e[0;32m\033[1mCases possibles : ");
+        // write_client(game->clients[j]->sock, "\e[0;31m\033[1mStarvation !\033[0m\r\n");
+        // write_client(game->clients[j]->sock, "\e[0;32m\033[1mCases possibles : ");
+        for (i = 0; i < 6; i++)
+        {
+            if (game->authorizedMove[i] == 1)
+            {
+                sprintf(textBuffer, "%d ", i + j * 6);
+                strcat(message, textBuffer);
+            }
+        }
+        strcat(message, "\033[0m\r\n");
         // write_client(game->clients[j]->sock, "\e[0;31m\033[1m/!\\ Choix non valide !\033[0m\r\n");
         return -2;
     }
@@ -611,7 +623,6 @@ int jouer(Game *game, int j, int caseChoisie, char *message)
             game->plateau[i] = plateauSave[i];
         }
         game->points[j] = pointsSave;
-        return -3;
     }
     return coupJoue;
 }
