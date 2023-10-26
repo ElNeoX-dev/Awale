@@ -174,7 +174,7 @@ static void app(void)
                   if (c == 0)
                   {
 
-                     if (client->state == WAITING || client->state == PLAYING_WAITING || client->state == PLAYING)
+                     if (client->state == PLAYING_WAITING || client->state == PLAYING)
                      {
                         if (strcmp(client->name, client->game->clients[0]->name) == 0)
                         {
@@ -330,29 +330,44 @@ static void app(void)
                            {
                               if (strcmp(allUsers[j].name, buffer) == 0)
                               {
-
-                                 write_client(client->sock, VIOLET BOLD "En attente de la réponse de %s...\r\n" RESET, buffer);
-                                 // printf("Je suis : %s->%d et je défie : %s->%d\r\n", client->name, client->state, allUsers[j].name, allUsers[j].state);
-                                 allUsers[j].state = CHALLENGED;
-                                 client->state = WAITING_RESPONSE;
-
-                                 // on cree la partie et on ajoute les deux joueurs
-                                 Game *game = malloc(sizeof(Game));
-
-                                 for (int k = 0; k < 12; k++)
+                                 // le joueur s'est deconnecté entre temps
+                                 if (allUsers[j].state == DISCONNECTED)
                                  {
-                                    game->plateau[k] = 4;
+                                    write_client(client->sock, VIOLET BOLD "%s s'est déconnecté entre temps...\r\n" RESET, buffer);
+                                    char *listePseudoOnline = malloc(NBMAXJOUEUR * (TAILLEMAXCHARJOUEUR + 2) * sizeof(char));
+                                    listerJoueurState(allUsers, listePseudoOnline, WAITING, client);
+                                    write_client(client->sock, BOLD "Voici la liste des joueurs en attente d'invitation: \r\n" RESET);
+                                    write_client(client->sock, listePseudoOnline);
+                                    write_client(client->sock, BOLD "Veuillez entrer le pseudo du joueur que vous voulez defier : \r\n" RESET);
+                                    listePseudoOnline[0] = 0;
+                                    free(listePseudoOnline);
                                  }
+                                 else
+                                 {
 
-                                 game->clients[0] = client; // 0 = celui qui request
-                                 game->clients[1] = &allUsers[j];
+                                    write_client(client->sock, VIOLET BOLD "En attente de la réponse de %s...\r\n" RESET, buffer);
+                                    // printf("Je suis : %s->%d et je défie : %s->%d\r\n", client->name, client->state, allUsers[j].name, allUsers[j].state);
+                                    allUsers[j].state = CHALLENGED;
+                                    client->state = WAITING_RESPONSE;
 
-                                 client->game = game;
-                                 allUsers[j].game = game;
+                                    // on cree la partie et on ajoute les deux joueurs
+                                    Game *game = malloc(sizeof(Game));
 
-                                 playerFound = 1;
-                                 write_client(allUsers[j].sock, "%s vous a défié\r\n0: Accepter\r\n1: Refuser\r\n", client->name);
-                                 break;
+                                    for (int k = 0; k < 12; k++)
+                                    {
+                                       game->plateau[k] = 4;
+                                    }
+
+                                    game->clients[0] = client; // 0 = celui qui request
+                                    game->clients[1] = &allUsers[j];
+
+                                    client->game = game;
+                                    allUsers[j].game = game;
+
+                                    playerFound = 1;
+                                    write_client(allUsers[j].sock, "%s vous a défié\r\n0: Accepter\r\n1: Refuser\r\n", client->name);
+                                    break;
+                                 }
                               }
                            }
                            if (playerFound == 0)
@@ -367,16 +382,6 @@ static void app(void)
                      {
                         if (strcmp(buffer, "0\0"))
                         {
-                           /*
-                           for (int j = 0; j < NBMAXJOUEUR; j++)
-                           {
-                              if (strcmp(allUsersWaiting[j], client->name) == 0)
-                              {
-                                 allUsersWaiting[j] = ""; // on le supprime de la liste d'attente
-                                 break;
-                              }
-                           }
-                           */
                            client->state = MENU;
                            write_client(client->sock, "%s", help);
                         }

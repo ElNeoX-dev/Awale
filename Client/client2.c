@@ -31,7 +31,7 @@ static void app(const char *address, const char *name)
    char buffer[BUF_SIZE];
    int isRegistered = 0;
    fd_set rdfs;
-   char *registerMsg = malloc(1024 * sizeof(char));
+   char registerMsg[BUF_SIZE];
 
    strcat(registerMsg, "inscription:");
    strcat(registerMsg, name);

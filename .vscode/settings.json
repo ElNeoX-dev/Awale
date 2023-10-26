@@ -10,6 +10,8 @@
     "chrono": "c",
     "typeindex": "c",
     "typeinfo": "c",
-    "cstdlib": "c"
+    "cstdlib": "c",
+    "locale": "c",
+    "string": "c"
   }
 }
