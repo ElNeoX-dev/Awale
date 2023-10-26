@@ -427,12 +427,12 @@ int isFinish(Game *game, char *message)
         // Determine the winner
         if (game->points[0] > game->points[1])
         {
-            sprintf(buffer, VERT BOLD "%s wins!\r\n" RESET, game->clients[0]->name);
+            sprintf(buffer, VERT BOLD "%s wins!\r\n" RESET, game->players[0]->name);
             strcat(message, buffer);
         }
         else if (game->points[1] > game->points[0])
         {
-            sprintf(buffer, VERT BOLD "%s wins!\r\n" RESET, game->clients[1]->name);
+            sprintf(buffer, VERT BOLD "%s wins!\r\n" RESET, game->players[1]->name);
             strcat(message, buffer);
         }
         else
@@ -596,7 +596,7 @@ int jouer(Game *game, int j, int caseChoisie, char *message)
     // tant que la case d'arrivée est adverse et 1 < nbGraine < 4, on prend les graines
     while (isTerrainAdverse(j, caseChoisie) && game->plateau[caseChoisie] > 1 && game->plateau[caseChoisie] < 4)
     {
-        sprintf(textBuffer, "\033[1m%s prend les graines de la case %d\033[0m\r\n", game->clients[j]->name, caseChoisie);
+        sprintf(textBuffer, "\033[1m%s prend les graines de la case %d\033[0m\r\n", game->players[j]->name, caseChoisie);
         strcat(message, textBuffer);
         // write_client(game->clients[j]->sock, "\033[1m%s prend les graines de la case %d\033[0m\r\n", game->clients[j], caseChoisie);
         game->points[j] += game->plateau[caseChoisie];
@@ -615,7 +615,7 @@ int jouer(Game *game, int j, int caseChoisie, char *message)
     // si la prise de graine précedente entraine une stravation, on restore le plateau et les points comme il était avant
     if (checkStarvation(game, j))
     {
-        sprintf(textBuffer, "\033[1m%s a affamé son adversaire ! Il ne prend donc pas les graines...\033[0m\r\n", game->clients[j]->name);
+        sprintf(textBuffer, "\033[1m%s a affamé son adversaire ! Il ne prend donc pas les graines...\033[0m\r\n", game->players[j]->name);
         strcat(message, textBuffer);
         // write_client(game->clients[j]->sock, "\033[1m%s a affamé son adversaire ! Il ne prend donc pas les graines...\033[0m\r\n", game->clients[j]);
         for (int i = 0; i < 12; i++)
@@ -737,9 +737,9 @@ int isTerrainAdverse(int j, int caseChoisie)
 void genererAffPlateau(Game *game, char *affichagePlateau)
 {
     char buffer[1024];
-    sprintf(buffer, JAUNE BOLD "Joueur 1 : %s\r\n" RESET, game->clients[0]->name);
+    sprintf(buffer, JAUNE BOLD "Joueur 1 : %s\r\n" RESET, game->players[0]->name);
     strcat(affichagePlateau, buffer);
-    sprintf(buffer, VIOLET BOLD "Joueur 2 : %s\r\n" RESET, game->clients[1]->name);
+    sprintf(buffer, VIOLET BOLD "Joueur 2 : %s\r\n" RESET, game->players[1]->name);
     strcat(affichagePlateau, buffer);
 
     sprintf(buffer, "\r\n");

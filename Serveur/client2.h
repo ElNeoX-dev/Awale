@@ -13,6 +13,7 @@ enum States
    MENU,
    LOBBY,
    PLAYING,
+   OBSERVING,
    HASPLAYED,
    WAITING_FOR_PLAY,
    PLAYING_WAITING,
@@ -37,7 +38,8 @@ typedef struct Game
    int plateau[12];
    int authorizedMove[12];
    int points[2];
-   Client *clients[2];
+   Client *players[2];
+   Client *observers[10];
 } Game;
 
 #endif /* guard */

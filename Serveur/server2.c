@@ -41,6 +41,7 @@ static void app(void)
    */
 
    Client allUsers[NBMAXJOUEUR];
+   Game allGames[NBMAXJOUEUR / 2];
 
    for (int i = 0; i < MAX_CLIENTS; i++)
    {
@@ -78,7 +79,8 @@ static void app(void)
                       VERT "  - 0 : jouer\r\n"
                             "  - 1 : afficher tous les pseudos\r\n"        /*"et leur etat\r\n"*/
                             "  - 2 : afficher tous les pseudos online\r\n" /*"et leur etat\r\n"*/
-                            "  - 3 : permet de quitter le jeu\r\n"
+                            "  - 3 : observer une partie\r\n"
+                            "  - 4 : permet de quitter le jeu\r\n"
                             "  - help : affiche les commandes utilisables\r\n" BOLD
                             " A tout moment" RESET VERT
                             " vous pouvez chatter avec votre adversaire (si vous êtes en jeu) ou avec tous les utilisateurs connectés en utilisant '->' avant d'envoyer votre message\r\n" RESET};
@@ -176,19 +178,29 @@ static void app(void)
 
                      if (client->state == PLAYING_WAITING || client->state == PLAYING)
                      {
-                        if (strcmp(client->name, client->game->clients[0]->name) == 0)
+                        if (strcmp(client->name, client->game->players[0]->name) == 0)
                         {
-                           write_client(client->game->clients[1]->sock, VERT BOLD "Vous avez gagné par abandon de %s !🥳\r\n\r\n" RESET, client->name);
-                           client->game->clients[1]->state = MENU;
+                           write_client(client->game->players[1]->sock, VERT BOLD "Vous avez gagné par abandon de %s !🥳\r\n\r\n" RESET, client->name);
+                           write_to_all_players(client->game->observers, VERT BOLD "%s a gagné par abandon de %s !🥳\r\n\r\n" RESET, client->game->players[1], client->name);
+                           client->game->players[1]->state = MENU;
+                           int i = 0;
+                           for (i = 0; i < 10; i++)
+                           {
+                              if (client->game->observers[i] != NULL && client->game->observers[i]->state == OBSERVING)
+                              {
+                                 client->game->observers[i]->state = MENU;
+                              }
+                           }
                            free(client->game);
-                           write_client(client->game->clients[1]->sock, "%s", help);
+                           write_client(client->game->players[1]->sock, "%s", help);
                         }
                         else
                         {
-                           write_client(client->game->clients[0]->sock, VERT BOLD "Vous avez gagné par abandon de %s !🥳\r\n\r\n" RESET, client->name);
-                           client->game->clients[0]->state = MENU;
+                           write_client(client->game->players[0]->sock, VERT BOLD "Vous avez gagné par abandon de %s !🥳\r\n\r\n" RESET, client->name);
+                           write_to_all_players(client->game->observers, VERT BOLD "%s a gagné par abandon de %s !🥳\r\n\r\n" RESET, client->game->players[0], client->name);
+                           client->game->players[0]->state = MENU;
                            free(client->game);
-                           write_client(client->game->clients[0]->sock, "%s", help);
+                           write_client(client->game->players[0]->sock, "%s", help);
                         }
                      }
 
@@ -219,7 +231,7 @@ static void app(void)
                         else
                         {
                            printf("EN GAME\n");
-                           write_to_players(client->game->clients, message);
+                           write_to_players(client->game->players, message);
                         }
 
                         free(message);
@@ -268,6 +280,11 @@ static void app(void)
                            free(listePseudoOnline);
                         }
                         else if (strcmp(buffer, "3\0") == 0)
+                        {
+                           printf("Il a ecrit OBSERVER\n");
+                           client->state = OBSERVING;
+                        }
+                        else if (strcmp(buffer, "4\0") == 0)
                         {
                            printf("Il a ecrit QUITTER\n");
 
@@ -346,7 +363,6 @@ static void app(void)
                                  }
                                  else
                                  {
-
                                     write_client(client->sock, VIOLET BOLD "En attente de la réponse de %s...\r\n" RESET, buffer);
                                     // printf("Je suis : %s->%d et je défie : %s->%d\r\n", client->name, client->state, allUsers[j].name, allUsers[j].state);
                                     allUsers[j].state = CHALLENGED;
@@ -354,7 +370,6 @@ static void app(void)
 
                                     // on cree la partie et on ajoute les deux joueurs
                                     Game *game = malloc(sizeof(Game));
-
                                     for (int k = 0; k < 6; k++)
                                     {
                                        game->plateau[k] = 4;
@@ -366,8 +381,8 @@ static void app(void)
                                     game->plateau[10] = 0;
                                     game->plateau[11] = 1;
 
-                                    game->clients[0] = client; // 0 = celui qui request
-                                    game->clients[1] = &allUsers[j];
+                                    game->players[0] = client; // 0 = celui qui request
+                                    game->players[1] = &allUsers[j];
 
                                     client->game = game;
                                     allUsers[j].game = game;
@@ -410,7 +425,7 @@ static void app(void)
                            char *affichagePlateau = malloc(1024 * sizeof(char));
                            // affichage du plateau
                            genererAffPlateau(client->game, affichagePlateau);
-                           write_to_players(client->game->clients, affichagePlateau);
+                           write_to_players(client->game->players, affichagePlateau);
                            free(affichagePlateau);
 
                            // tirer un nombre aleatoire entre 0 et 1 et defini qui commence
@@ -418,32 +433,32 @@ static void app(void)
                            {
                               client->id = 0;
                               client->state = PLAYING;
-                              client->game->clients[0]->id = 1;
-                              client->game->clients[0]->state = PLAYING_WAITING;
+                              client->game->players[0]->id = 1;
+                              client->game->players[0]->state = PLAYING_WAITING;
                               write_client(client->sock, "Le Hasard a décidé que vous commenciez\r\n");
                               write_client(client->sock, "%s, choisissez une case non-vide (entre 0 et 5): ", client->name);
 
-                              write_client(client->game->clients[0]->sock, "Le Hasard a décidé que %s commencait\r\n", client->name);
+                              write_client(client->game->players[0]->sock, "Le Hasard a décidé que %s commencait\r\n", client->name);
                            }
                            else
                            {
                               client->id = 1;
                               client->state = PLAYING_WAITING;
-                              client->game->clients[0]->id = 0;
-                              client->game->clients[0]->state = PLAYING;
+                              client->game->players[0]->id = 0;
+                              client->game->players[0]->state = PLAYING;
 
-                              write_client(client->game->clients[0]->sock, "Le Hasard a décidé que vous commenciez\r\n");
-                              write_client(client->game->clients[0]->sock, "%s, choisissez une case non-vide (entre 0 et 5): ", client->game->clients[0]->name);
+                              write_client(client->game->players[0]->sock, "Le Hasard a décidé que vous commenciez\r\n");
+                              write_client(client->game->players[0]->sock, "%s, choisissez une case non-vide (entre 0 et 5): ", client->game->players[0]->name);
 
-                              write_client(client->sock, "Le Hasard a décidé que %s commencait\r\n", client->game->clients[0]->name);
+                              write_client(client->sock, "Le Hasard a décidé que %s commencait\r\n", client->game->players[0]->name);
                            }
                         }
                         else if (strcmp(buffer, "1\0") == 0)
                         {
                            client->state = WAITING;
-                           client->game->clients[0]->state = MENU;
-                           write_client(client->game->clients[0]->sock, ROUGE "%s n'a pas accepté le challenge...'\r\n" RESET, client->name);
-                           write_client(client->game->clients[0]->sock, VERT BOLD "En attente ...\r\nEnvoyer n'importe quoi pour annuler\r\n" RESET);
+                           client->game->players[0]->state = MENU;
+                           write_client(client->game->players[0]->sock, ROUGE "%s n'a pas accepté le challenge...'\r\n" RESET, client->name);
+                           write_client(client->game->players[0]->sock, VERT BOLD "En attente ...\r\nEnvoyer n'importe quoi pour annuler\r\n" RESET);
 
                            write_client(client->sock, "%s", help);
                         }
@@ -462,38 +477,51 @@ static void app(void)
                         {
                            if (isFinish(client->game, message) == 1)
                            {
-                              write_to_players(client->game->clients, message);
-                              client->game->clients[0]->state = MENU;
-                              client->game->clients[1]->state = MENU;
-                              write_to_players(client->game->clients, "%s", help);
+                              write_to_players(client->game->players, message);
+                              client->game->players[0]->state = MENU;
+                              client->game->players[1]->state = MENU;
+                              int i = 0;
+                              for (i = 0; i < 10; i++)
+                              {
+                                 if (client->game->observers[i] != NULL && client->game->observers[i]->state == OBSERVING)
+                                 {
+                                    client->game->observers[i]->state = MENU;
+                                 }
+                              }
+                              write_to_players(client->game->players, "%s", help);
+                              write_to_players(client->game->observers, "%s", help);
                               free(client->game);
                            }
                            else
                            {
                               genererAffPlateau(client->game, affichagePlateau);
-                              write_to_players(client->game->clients, message);
-                              write_to_players(client->game->clients, affichagePlateau);
+                              write_to_players(client->game->players, message);
+                              write_to_players(client->game->players, affichagePlateau);
+                              write_to_players(client->game->observers, "%s", message);
+                              write_to_players(client->game->observers, affichagePlateau);
                               if (checkStarvation(client->game, 0) == 1 || checkStarvation(client->game, 1))
                               {
                                  char *starvation = malloc(1024 * sizeof(char));
                                  starvation[0] = 0;
                                  strcat(starvation, "\e[0;31m\033[1mStarvation !\033[0m\r\n");
-                                 write_to_players(client->game->clients, starvation);
+                                 write_to_players(client->game->players, starvation);
+                                 write_to_players(client->game->observers, starvation);
                                  free(starvation);
                               }
-                              if (client->game->clients[0]->state == PLAYING_WAITING)
+                              if (client->game->players[0]->state == PLAYING_WAITING)
                               {
-                                 client->game->clients[0]->state = PLAYING;
-                                 write_client(client->game->clients[0]->sock, "%s, choisissez une case non-vide (entre %d et %d): ", client->game->clients[0]->name, 6 * client->game->clients[0]->id, 6 * client->game->clients[0]->id + 5);
-                                 write_client(client->game->clients[1]->sock, BOLD "C'est au tour de %s" RESET, client->game->clients[0]->name);
+                                 client->game->players[0]->state = PLAYING;
+                                 write_client(client->game->players[0]->sock, "%s, choisissez une case non-vide (entre %d et %d): ", client->game->players[0]->name, 6 * client->game->players[0]->id, 6 * client->game->players[0]->id + 5);
+                                 write_client(client->game->players[1]->sock, BOLD "C'est au tour de %s" RESET, client->game->players[0]->name);
+                                 write_to_players(client->game->observers, BOLD "C'est au tour de %s" RESET, client->game->players[0]->name);
                               }
                               else
                               {
-                                 client->game->clients[1]->state = PLAYING;
-                                 write_client(client->game->clients[1]->sock, "%s, choisissez une case non-vide (entre %d et %d): ", client->game->clients[1]->name, 6 * client->game->clients[1]->id, 6 * client->game->clients[1]->id + 5);
-                                 write_client(client->game->clients[0]->sock, BOLD "C'est au tour de %s" RESET, client->game->clients[1]->name);
+                                 client->game->players[1]->state = PLAYING;
+                                 write_client(client->game->players[1]->sock, "%s, choisissez une case non-vide (entre %d et %d): ", client->game->players[1]->name, 6 * client->game->players[1]->id, 6 * client->game->players[1]->id + 5);
+                                 write_client(client->game->players[0]->sock, BOLD "C'est au tour de %s" RESET, client->game->players[1]->name);
+                                 write_to_players(client->game->observers, BOLD "C'est au tour de %s" RESET, client->game->players[1]->name);
                               }
-
                               client->state = PLAYING_WAITING;
                            }
                         }
@@ -503,20 +531,6 @@ static void app(void)
                         }
                         free(message);
                         free(affichagePlateau);
-
-                        /*                      // boucle de jeu
-                                             while (isFinish(client.game) == 0)
-                                             {
-                                                // joueur 1
-                                                jouer(client.game, 0);
-                                                afficherPlateau(client.game, affichagePlateau);
-                                                write_to_players(client.game->clients, affichagePlateau);
-
-                                                // joueur 2
-                                                jouer(client.game, 1);
-                                                afficherPlateau(client.game, affichagePlateau);
-                                             }
-                           */
                      }
                      else if (client->state == PLAYING_WAITING)
                      {
@@ -524,9 +538,6 @@ static void app(void)
                         {
                            write_client(client->sock, ROUGE BOLD "Ce n'est pas votre tour\r\n" RESET);
                         }
-                     }
-                     else if (client->state == WAITING_FOR_PLAY && strlen(buffer) > 0)
-                     {
                      }
                   }
                   break;
@@ -639,7 +650,7 @@ static void write_client(SOCKET sock, const char *message, ...)
    va_end(args);
 }
 
-static void write_to_players(Client **clients, const char *message, ...)
+static void write_to_players(Client **players, const char *message, ...)
 {
    va_list args;
    va_start(args, message);
@@ -654,12 +665,12 @@ static void write_to_players(Client **clients, const char *message, ...)
    // a changer en fonction du nombre d'observateurs
    for (i = 0; i < 2; i++)
    {
-      write_client(clients[i]->sock, buffer);
+      write_client(players[i]->sock, buffer);
    }
    va_end(args);
 }
 
-static void write_to_all_players(Client **clients, const char *message, ...)
+static void write_to_all_players(Client **players, const char *message, ...)
 {
    va_list args;
    va_start(args, message);
@@ -674,9 +685,9 @@ static void write_to_all_players(Client **clients, const char *message, ...)
    // a changer en fonction du nombre d'observateurs
    for (i = 0; i < NBMAXJOUEUR; i++)
    {
-      if (clients[i] != NULL)
+      if (players[i] != NULL)
       {
-         write_client(clients[i]->sock, buffer);
+         write_client(players[i]->sock, buffer);
       }
    }
    va_end(args);
