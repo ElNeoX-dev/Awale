@@ -2,6 +2,7 @@
 #define CLIENT_H
 
 #define BUF_SIZE 1024
+#define NBMAXOBSERVER 10
 
 typedef int SOCKET;
 
@@ -13,6 +14,7 @@ enum States
    MENU,
    LOBBY,
    PLAYING,
+   CHOOSING_GAME,
    OBSERVING,
    HASPLAYED,
    WAITING_FOR_PLAY,
@@ -39,7 +41,9 @@ typedef struct Game
    int authorizedMove[12];
    int points[2];
    Client *players[2];
-   Client *observers[10];
+   Client *observers[NBMAXOBSERVER];
+   int nbObservers;
+   int gameID;
 } Game;
 
 #endif /* guard */

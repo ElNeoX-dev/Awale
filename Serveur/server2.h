@@ -38,6 +38,7 @@ typedef struct in_addr IN_ADDR;
 #define BUF_SIZE 1024
 
 #define NBMAXJOUEUR 100
+#define NBMAXOBSERVER 10
 #define TAILLEMAXCHARJOUEUR 20
 
 static void init(void);
@@ -49,11 +50,12 @@ static int read_client(SOCKET sock, char *buffer);
 static void write_client(SOCKET sock, const char *buffer, ...);
 static void write_to_players(Client **clients, const char *message, ...);
 static void write_to_all_players(Client **clients, const char *message, ...);
-static void send_message_to_all_clients(Client *clients, Client client, int actual, const char *buffer, char from_server);
+static void send_message_to_all_clients(Client *clients, const char *buffer);
 static void clear_clients(Client *clients);
 
 void sinscrire(char *username, Client *allUser, Client *client);
 void listerJoueurState(Client *allUser, char *listePseudo, enum States state, Client *client);
 void listerJoueurNotState(Client *allUser, char *listePseudo, enum States state, Client *client);
+void listerGameEnCours(Game **allGames, char *playedGame);
 
 #endif /* guard */

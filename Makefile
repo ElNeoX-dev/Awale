@@ -1,21 +1,46 @@
+# Couleurs pour l'affichage
+RED = \033[31m
+GREEN = \033[32m
+YELLOW = \033[33m
+YELLOW = \033[33m
+BOLD = \033[1m
+NC = \033[0m # Pas de couleur
+
+# Compilateur
 CC = gcc
-ECHO = echo
-CFLAGS =  -c -g -Wall
-MAPFLAG = -DMAP
-SRC = $(wildcard *.c)
-HDR = $(wildcard *.h)
-OBJ = $(SRC:.c=.o)
-EXE = awale
 
-all: $(SRC) $(OBJ) $(EXE)
+# Dossiers
+SRV_DIR = Serveur
+CLI_DIR = Client
 
-$(EXE): $(OBJ)
-	@echo "\n\e[0;35m\033[1mEdition des liens\033[0m"
-	$(CC) $(CLAGS) $^ -o $@
+# Sources et objets
+SRV_SOURCES = $(SRV_DIR)/server2.c $(SRV_DIR)/awale.c
+CLI_SOURCE = $(CLI_DIR)/client2.c
+SRV_OBJECTS = $(SRV_SOURCES:.c=.o)
+CLI_OBJECT = $(CLI_SOURCE:.c=.o)
 
-%.o : %.c $(HDR)
-	@echo "\e[1;33m\033[1mCompilation de" $< "\033[0m"
-	$(CC)   $(CFLAGS) $< -o $@ $(MAPFLAG)
+# Exécutables
+SRV_BIN = server_bin
+CLI_BIN = client_bin
+
+all: $(SRV_BIN) $(CLI_BIN)
+
+$(SRV_BIN): $(SRV_OBJECTS)
+	@echo "$(YELLOW)Génération de $@...$(NC)"
+	$(CC) -o $@ $^
+	@echo "$(GREEN)$(BOLD)$@ a été généré avec succès !$(NC)\r\n"
+
+$(CLI_BIN): $(CLI_OBJECT)
+	@echo "$(YELLOW)Génération de $@...$(NC)"
+	$(CC) -o $@ $^
+	@echo "$(GREEN)$(BOLD)$@ a été généré avec succès !$(NC)\r\n"
+
+%.o: %.c
+	@echo "$(YELLOW)Compilation de $<...$(NC)"
+	$(CC) -c $< -o $@
 
 clean:
-	rm *.o $(EXE) 
+	@echo "$(RED)Suppression des fichiers objets et des exécutables...$(NC)"
+	rm -f $(SRV_DIR)/*.o $(CLI_DIR)/*.o $(SRV_BIN) $(CLI_BIN)
+
+.PHONY: all clean

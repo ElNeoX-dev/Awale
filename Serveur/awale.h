@@ -13,7 +13,7 @@
 #include <stdarg.h>
 #include <errno.h>
 #include "../Serveur/awale.h"
-#include "client2.h"
+
 #define INVALID_SOCKET -1
 #define SOCKET_ERROR -1
 #define closesocket(s) close(s)

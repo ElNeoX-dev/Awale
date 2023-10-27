@@ -171,20 +171,20 @@ int sinscrire(char *received_data, const char *username, SOCKET sock)
    // si retour == 0, erreur -> utilisateur déjà connecté
    if (strstr(received_data, "Inscription") != NULL)
    {
-      printf("Bienvenue %s, nous venons de creer votre utilisateur\r\n", username);
+      printf(BOLD "Bienvenue %s, nous venons de creer votre utilisateur\r\n\r\n" RESET, username);
       write_server(sock, "OK");
       return 1;
    }
    else if (strstr(received_data, "WelcomeBack") != NULL)
    {
-      printf("Welcome back %s\r\n", username);
+      printf(BOLD "Welcome back %s\r\n\r\n" RESET, username);
       write_server(sock, "OK");
       return 1;
    }
    else
    {
       printf("%s", received_data);
-      printf("Cet utilisateur est déjà connecté\r\n");
+      printf(BOLD "Cet utilisateur est" ROUGE " déjà connecté\r\n" RESET);
       return 0;
    }
 }

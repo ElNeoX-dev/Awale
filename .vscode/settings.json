@@ -12,6 +12,15 @@
     "typeinfo": "c",
     "cstdlib": "c",
     "locale": "c",
-    "string": "c"
+    "string": "c",
+    "inet.h": "c",
+    "stdarg.h": "c",
+    "awale.h": "c",
+    "in.h": "c",
+    "prettytext.h": "c",
+    "socket.h": "c",
+    "types.h": "c",
+    "__locale": "c",
+    "bitset": "c"
   }
 }

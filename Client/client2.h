@@ -34,6 +34,7 @@ typedef struct in_addr IN_ADDR;
 #define JAUNE "\e[1;33m"
 #define VIOLET "\e[0;35m"
 #define BLEU "\e[0;34m"
+#define CYAN "\e[0;36m"
 #define BOLD "\033[1m"
 #define RESET "\033[0m"
 
