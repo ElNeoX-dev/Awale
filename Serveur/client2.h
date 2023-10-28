@@ -16,20 +16,23 @@ enum States
    PLAYING,
    CHOOSING_GAME,
    OBSERVING,
-   HASPLAYED,
-   WAITING_FOR_PLAY,
    PLAYING_WAITING,
    CHALLENGED,
    WAITING_RESPONSE,
    WAITING,
    REQUESTING,
-   RESPONDING
+   RESPONDING,
+   WRITING_BIO,
+   MENU_BIO,
+   CHOOSING_BIO,
+   READING_BIO
 };
 
 typedef struct Client
 {
    SOCKET sock;
    char name[BUF_SIZE];
+   char bio[BUF_SIZE];
    enum States state;
    struct Game *game;
    int id;

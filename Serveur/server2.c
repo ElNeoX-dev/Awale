@@ -60,8 +60,9 @@ static void app(void)
    fd_set rdfs;
 
    char help[] = {VERT BOLD " ---   MENU   ---\r\n" RESET BOLD "Voici la liste des commandes utilisables :\r\n" RESET
-                      VERT "  - 0 : " RESET "jouer\r\n" VERT "  - 1 : " RESET "afficher tous les pseudos et leur etat\r\n" VERT "  - 2 : " RESET "afficher tous les pseudos online et leur etat\r\n" VERT "  - 3 : " RESET "observer une partie\r\n" VERT "  - 4 : " RESET "permet de quitter le jeu\r\n" VERT "  - help : " RESET "affiche les commandes utilisables\r\n" BOLD VERT " A tout moment" RESET " vous pouvez" VERT " chatter" RESET " avec votre adversaire (si vous êtes en jeu) ou avec tous les utilisateurs connectés" VERT " en utilisant '->' " RESET "avant d'envoyer votre message\r\n"};
+                      VERT "  - 0 : " RESET "jouer\r\n" VERT "  - 1 : " RESET "afficher tous les pseudos et leur etat\r\n" VERT "  - 2 : " RESET "afficher tous les pseudos online et leur etat\r\n" VERT "  - 3 : " RESET "observer une partie\r\n" VERT "  - 4 : " RESET "consulter/éditer sa bio\r\n" VERT "  - 5 : " RESET "consulter la bio d'un autre joueur\r\n" VERT "  - 6 : " RESET "permet de quitter le jeu\r\n" VERT "  - help : " RESET "affiche les commandes utilisables\r\n" BOLD VERT " A tout moment" RESET " vous pouvez" VERT " chatter" RESET " avec votre adversaire (si vous êtes en jeu) ou avec tous les utilisateurs connectés" VERT " en utilisant '->' " RESET "avant d'envoyer votre message\r\n"};
 
+   char menu_bio[] = {VERT "- 0 : " RESET "consulter votre bio\r\n" VERT "- 1 : " RESET "modifier votre bio\r\n" VERT "- 2 : " RESET "retourner au menu\r\n"};
    while (1)
    {
       int i = 0;
@@ -89,6 +90,8 @@ static void app(void)
       if (select(max + 1, &rdfs, NULL, NULL, NULL) == -1)
       {
          perror("select()");
+         clear_games(allGames);
+         clear_clients(allUsers);
          exit(errno);
       }
 
@@ -187,15 +190,16 @@ static void app(void)
                         free(client->game);
                         allGames[gameIDloc]->gameID = -1;
                      }
-                     if (client->state == OBSERVING)
+                     else if (client->state == OBSERVING)
                      {
-                        for (int i = 0; i < NBMAXOBSERVER; i++)
+                        for (i = 0; i < NBMAXOBSERVER; i++)
                         {
                            if (client->game->observers[i] != NULL && strcmp(client->name, client->game->observers[i]->name) == 0)
                            {
                               client->game->observers[i] = NULL;
                               client->game->nbObservers--;
                               client->game = NULL;
+                              break;
                            }
                         }
                      }
@@ -228,7 +232,7 @@ static void app(void)
                         {
                            printf("EN GAME\n");
                            write_to_players(client->game->players, message);
-                           write_to_players(client->game->observers, message);
+                           write_to_all_players(client->game->observers, message);
                         }
 
                         free(message);
@@ -239,6 +243,7 @@ static void app(void)
                         {
                            write_client(client->sock, "%s", help);
                            client->state = MENU;
+                           client->bio[0] = 0;
                         }
                      }
                      else if (client->state == MENU)
@@ -252,7 +257,7 @@ static void app(void)
                         {
                            printf("Il a ecrit JOUER\n");
                            client->state = LOBBY;
-                           write_client(client->sock, "0: defier un joueur\r\n1: attendre une invitation\r\n2: retourner au menu\r\n");
+                           write_client(client->sock, VERT "- 0 : " RESET "défier un joueur\r\n" VERT "- 1 : " RESET "attendre une invitation\r\n" VERT "- 2 : " RESET "retourner au menu\r\n");
                         }
                         else if (strcmp(buffer, "1\0") == 0)
                         {
@@ -297,6 +302,21 @@ static void app(void)
                            free(listeGameEnCours);
                         }
                         else if (strcmp(buffer, "4\0") == 0)
+                        {
+                           printf("Il a écrit BIO\n");
+                           client->state = MENU_BIO;
+                           write_client(client->sock, "%s", menu_bio);
+                        }
+                        else if (strcmp(buffer, "5\0") == 0)
+                        {
+                           printf("Il a écrit LECTURE BIO\n");
+                           char *listePseudos = malloc(NBMAXJOUEUR * BUF_SIZE * sizeof(char));
+                           listerJoueurBio(allUsers, listePseudos, client);
+                           write_client(client->sock, BOLD "Voici la liste des pseudos : \r\n" RESET "%s\r\n Choisissez un nombre : \r\n", listePseudos);
+                           client->state = CHOOSING_BIO;
+                           free(listePseudos);
+                        }
+                        else if (strcmp(buffer, "6\0") == 0)
                         {
                            printf("Il a ecrit QUITTER\n");
 
@@ -410,19 +430,73 @@ static void app(void)
                      }
                      else if (client->state == WAITING)
                      {
-                        if (strcmp(buffer, "0\0"))
+                        if (strlen(buffer) > 0)
                         {
                            client->state = MENU;
                            write_client(client->sock, "%s", help);
                         }
                      }
-                     /*else if (client->state == CHALLENGED)
+                     else if (client->state == MENU_BIO)
                      {
-                        client->state = RESPONDING;
-                        write_client(client->sock, "%s vous a défié\r\n0: Accepter\r\n1: Refuser\r\n", client->game->clients[0]->name);
-                     }*/
-                     else if (client->state == WAITING_RESPONSE)
+                        if (strcmp(buffer, "0\0") == 0)
+                        {
+                           write_client(client->sock, VERT BOLD "votre bio :\r\n" RESET);
+                           write_client(client->sock, "%s\r\n", client->bio);
+                           write_client(client->sock, "%s", menu_bio);
+                        }
+                        else if (strcmp(buffer, "1\0") == 0)
+                        {
+                           client->state = WRITING_BIO;
+                           write_client(client->sock, VERT BOLD "écrivez votre bio :\r\n" RESET);
+                        }
+                        else if (strcmp(buffer, "2\0") == 0)
+                        {
+                           client->state = MENU;
+                           write_client(client->sock, "%s", help);
+                        }
+                        else
+                        {
+                           write_client(client->sock, ROUGE BOLD "Choix incrorrect !\r\n" RESET);
+                        }
+                     }
+                     else if (client->state == WRITING_BIO)
                      {
+                        if (strlen(buffer) > 0)
+                        {
+                           strcpy(client->bio, buffer);
+                           write_client(client->sock, VERT BOLD "Votre bio a bien été modifiée !\r\n" RESET);
+                           client->state = MENU_BIO;
+                           write_client(client->sock, "%s", menu_bio);
+                        }
+                     }
+                     else if (client->state == CHOOSING_BIO)
+                     {
+                        if (strlen(buffer) > 0)
+                        {
+                           int choix = atoi(buffer);
+                           write_client(client->sock, "Bio : %s", allUsers[choix].bio);
+                           write_client(client->sock, VERT "- 0 : " RESET "Lire une autre bio\r\n" VERT "- 1 : " RESET "retourner au menu\r\n");
+                           client->state = READING_BIO;
+                        }
+                     }
+                     else if (client->state == READING_BIO)
+                     {
+                        if (strlen(buffer) > 0)
+                        {
+                           if (strcmp(buffer, "0") == 0)
+                           {
+                              char *listePseudos = malloc(NBMAXJOUEUR * BUF_SIZE * sizeof(char));
+                              listerJoueurBio(allUsers, listePseudos, client);
+                              write_client(client->sock, BOLD "Voici la liste des pseudos : \r\n" RESET "%s\r\n Choisissez un nombre : \r\n", listePseudos);
+                              client->state = CHOOSING_BIO;
+                              free(listePseudos);
+                           }
+                           else if (strcmp(buffer, "1") == 0)
+                           {
+                              write_client(client->sock, "%s", help);
+                              client->state = MENU;
+                           }
+                        }
                      }
                      else if (client->state == CHALLENGED)
                      {
@@ -601,6 +675,7 @@ static void app(void)
       }
    }
 
+   clear_games(allGames);
    clear_clients(allUsers);
    end_connection(sock);
 }
@@ -747,6 +822,16 @@ static void write_to_all_players(Client **players, const char *message, ...)
    va_end(args);
 }
 
+static void clear_games(Game **games)
+{
+   int i = 0;
+   for (i = 0; i < NBMAXJOUEUR / 2; i++)
+   {
+      free(games[i]);
+   }
+   free(games);
+}
+
 int main(int argc, char **argv)
 {
    printf(BOLD "Server started\n" RESET);
@@ -826,10 +911,34 @@ void listerJoueurState(Client *allUsers, char *listePseudo, enum States state, C
    }
 }
 
+void listerJoueurBio(Client *allUsers, char *listePseudo, Client *client)
+{
+   for (int j = 0; j < NBMAXJOUEUR; j++)
+   {
+      char joueur[1024];
+      joueur[0] = 0;
+      if (allUsers[j].state == NOTEXIST)
+      {
+         break;
+      }
+      else if (allUsers[j].name == client->name)
+      {
+         sprintf(joueur, VERT "%d : %s (you)\r\n" RESET, j, allUsers[j].name);
+         strcat(listePseudo, joueur);
+      }
+      else
+      {
+         sprintf(joueur, "%d : %s \r\n", j, allUsers[j].name);
+         strcat(listePseudo, joueur);
+      }
+   }
+}
+
 void listerJoueurNotState(Client *allUsers, char *listePseudo, enum States state, Client *client)
 {
    for (int j = 0; j < NBMAXJOUEUR; j++)
    {
+
       if (allUsers[j].state == NOTEXIST)
       {
          break;

@@ -52,10 +52,12 @@ static void write_to_players(Client **clients, const char *message, ...);
 static void write_to_all_players(Client **clients, const char *message, ...);
 static void send_message_to_all_clients(Client *clients, const char *buffer);
 static void clear_clients(Client *clients);
+static void clear_games(Game **games);
 
 void sinscrire(char *username, Client *allUser, Client *client);
 void listerJoueurState(Client *allUser, char *listePseudo, enum States state, Client *client);
 void listerJoueurNotState(Client *allUser, char *listePseudo, enum States state, Client *client);
 void listerGameEnCours(Game **allGames, char *playedGame);
+void listerJoueurBio(Client *allUsers, char *listePseudo, Client *client);
 
 #endif /* guard */
