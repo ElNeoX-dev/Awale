@@ -32,6 +32,7 @@ static void app(void)
 {
    /* INIT */
 
+   /* an array for all clients */
    Client allUsers[NBMAXJOUEUR];
    Game **allGames = malloc(NBMAXJOUEUR / 2 * sizeof(Game *));
 
@@ -51,10 +52,7 @@ static void app(void)
 
    SOCKET sock = init_connection();
    char buffer[BUF_SIZE];
-   /* the index for the array */
-   int actual = 0;
    int max = sock;
-   /* an array for all clients */
    fd_set rdfs;
 
    char help[] = {VERT BOLD " ---   MENU   ---\r\n" RESET BOLD "Voici la liste des commandes utilisables :\r\n" RESET
@@ -211,8 +209,6 @@ static void app(void)
                   }
                   else
                   {
-                     // send_message_to_all_clients(clientslocal, *client, actual, buffer, 0);
-
                      // Chat : si le message contient "->"
                      // Envoie a tous le monde si le client est dans le lobby ou dans le menu
                      // Envoie a son adversaire si le client est en Game
@@ -797,7 +793,7 @@ static void write_client(SOCKET sock, const char *message, ...)
    va_start(args, message);
 
    // Créez un tampon pour formater le message
-   char buffer[1024]; // Vous pouvez ajuster la taille du tampon en fonction de vos besoins
+   char buffer[1024];
 
    // Formatez le message en utilisant vsnprintf
    vsnprintf(buffer, sizeof(buffer), message, args);
@@ -820,7 +816,7 @@ static void write_to_players(Client **players, const char *message, ...)
    va_start(args, message);
 
    // Créez un tampon pour formater le message
-   char buffer[1024]; // Vous pouvez ajuster la taille du tampon en fonction de vos besoins
+   char buffer[1024];
 
    // Formatez le message en utilisant vsnprintf
    vsnprintf(buffer, sizeof(buffer), message, args);
@@ -840,7 +836,7 @@ static void write_to_all_players(Client **players, const char *message, ...)
    va_start(args, message);
 
    // Créez un tampon pour formater le message
-   char buffer[1024]; // Vous pouvez ajuster la taille du tampon en fonction de vos besoins
+   char buffer[1024];
 
    // Formatez le message en utilisant vsnprintf
    vsnprintf(buffer, sizeof(buffer), message, args);
@@ -955,7 +951,6 @@ void listerJoueurNotState(Client *allUsers, char *listePseudo, enum States state
       }
       else if (allUsers[j].state != state && allUsers[j].name == client->name)
       {
-         // printf("allUsers[j].name = %s\r\nallUsers[j].state = %d\r\n", allUsers[j].name, allUsers[j].state);
          strcat(listePseudo, JAUNE);
          strcat(listePseudo, allUsers[j].name);
          strcat(listePseudo, " (you)" RESET);
@@ -963,7 +958,6 @@ void listerJoueurNotState(Client *allUsers, char *listePseudo, enum States state
       }
       else if (allUsers[j].state != state)
       {
-         // printf("allUsers[j].name = %s\r\nallUsers[j].state = %d\r\n", allUsers[j].name, allUsers[j].state);
          strcat(listePseudo, allUsers[j].name);
 
          if (allUsers[j].state == PLAYING_WAITING || allUsers[j].state == PLAYING)
