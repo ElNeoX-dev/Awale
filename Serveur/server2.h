@@ -58,6 +58,5 @@ void sinscrire(char *username, Client *allUser, Client *client);
 void listerJoueurState(Client *allUser, char *listePseudo, enum States state, Client *client);
 void listerJoueurNotState(Client *allUser, char *listePseudo, enum States state, Client *client);
 void listerGameEnCours(Game **allGames, char *playedGame);
-void listerJoueurBio(Client *allUsers, char *listePseudo, Client *client);
 
 #endif /* guard */

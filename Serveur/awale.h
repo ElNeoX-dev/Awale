@@ -27,9 +27,6 @@ int jouer(Game *game, int j, int caseChoisie, char *message);
 int isTerrainAdverse(int j, int CaseChoisie);
 int updateAuthorizedMove(Game *game, int j);
 int checkStarvation(Game *game, int j);
-// int hasWin(int *points, char **joueur);
 int isFinish(Game *game, char *message);
-static void write_client(SOCKET sock, const char *message, ...);
-static void write_to_players(Client **clients, const char *message, ...);
 
 #endif

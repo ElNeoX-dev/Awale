@@ -1,8 +1,0 @@
-A faire le mercredi 25/10/23
-
-- mettre le nom de qui parle dans les logs
-- tester les conditions limites
-- isFinish qui marche
-- tester les starvation (avec prise de graines et sans)
-
--> Test complet de tout le jeu

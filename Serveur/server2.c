@@ -55,8 +55,6 @@ static void app(void)
    int actual = 0;
    int max = sock;
    /* an array for all clients */
-   // Client clientslocal[MAX_CLIENTS];
-
    fd_set rdfs;
 
    char help[] = {VERT BOLD " ---   MENU   ---\r\n" RESET BOLD "Voici la liste des commandes utilisables :\r\n" RESET
@@ -127,10 +125,6 @@ static void app(void)
 
          Client c = {csock};
          strncpy(c.name, buffer, BUF_SIZE - 1);
-         // allUsers[actual] = c;
-         // actual++;
-
-         // printf("Il a ecrit INSCRIPTION\n");
          sinscrire(buffer, allUsers, &c);
       }
       else
@@ -362,18 +356,6 @@ static void app(void)
                         else if (strcmp(buffer, "1\0") == 0)
                         {
                            client->state = WAITING;
-                           // Ajouter son pseudo a la liste des joueurs WAITING
-                           /*
-                           for (int j = 0; j < NBMAXJOUEUR; j++)
-                           {
-                              if (strcmp(allUsersOnline[j]->name, "") == 0)
-                              {
-                                 allUsersOnline[j]->name = client->name;
-                                 break;
-                              }
-                           }
-                           */
-
                            write_client(client->sock, VIOLET BOLD "En attente ...\r\n" RESET BOLD "Envoyer n'importe quoi pour annuler\r\n" RESET);
                         }
                         else if (strcmp(buffer, "2\0") == 0)
@@ -404,7 +386,6 @@ static void app(void)
                                  else
                                  {
                                     write_client(client->sock, VIOLET BOLD "En attente de la réponse de %s...\r\n" RESET, buffer);
-                                    // printf("Je suis : %s->%d et je défie : %s->%d\r\n", client->name, client->state, allUsers[j].name, allUsers[j].state);
                                     allUsers[j].state = CHALLENGED;
                                     client->state = WAITING_RESPONSE;
 
@@ -911,7 +892,6 @@ void sinscrire(char *username, Client *allUsers, Client *client)
          write_client(client->sock, "WelcomeBack\r\n");
 
          break;
-         // return 2;
       }
       else if (allUsers[j].state != NOTEXIST && allUsers[j].state != DISCONNECTED && strcmp(username, allUsers[j].name) == 0)
       {
@@ -919,7 +899,6 @@ void sinscrire(char *username, Client *allUsers, Client *client)
          write_client(client->sock, "DejaEnLigne\r\n");
 
          break;
-         // return 0;
       }
       else if (allUsers[j].state == NOTEXIST)
       {
@@ -964,30 +943,7 @@ void listerJoueurState(Client *allUsers, char *listePseudo, enum States state, C
       }
    }
 }
-/*
-void listerJoueurBio(Client *allUsers, char *listePseudo, Client *client)
-{
-   for (int j = 0; j < NBMAXJOUEUR; j++)
-   {
-      char joueur[1024];
-      joueur[0] = 0;
-      if (allUsers[j].state == NOTEXIST)
-      {
-         break;
-      }
-      else if (allUsers[j].name == client->name)
-      {
-         sprintf(joueur, VERT "%d:" RESET JAUNE " %s (you)\r\n" RESET, j, allUsers[j].name);
-         strcat(listePseudo, joueur);
-      }
-      else
-      {
-         sprintf(joueur, VERT "%d:" RESET " %s \r\n", j, allUsers[j].name);
-         strcat(listePseudo, joueur);
-      }
-   }
-}
-*/
+
 void listerJoueurNotState(Client *allUsers, char *listePseudo, enum States state, Client *client)
 {
    for (int j = 0; j < NBMAXJOUEUR; j++)
